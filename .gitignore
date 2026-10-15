@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.mplconfig/
+.venv/
+.env
+.env.*
+!.env.example
+.building_*/
+.previous_*/
+.update_*
+tempCodeRunnerFile.py
+main_unsaved_backup.txt

@@ -1,0 +1,71 @@
+{
+  "source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+  "anchor_day": "2025-10-13",
+  "test_start": "2025-10-14",
+  "test_end": "2026-10-13",
+  "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; no fees, slippage, tax or FX. Adjusted-price growth, not executable fills.",
+  "selected_on_train": {
+    "ticker": "GIS",
+    "new_stock_weight_percent": 20.0,
+    "train_variance": 0.00010629130641803318,
+    "train_daily_volatility_percent": 1.0309767524926698,
+    "volatility_reduction_percentage_points": 0.1944319816330052,
+    "relative_volatility_reduction_percent": 15.866704407956728
+  },
+  "proposed_initial_weights": [
+    {
+      "ticker": "AAPL",
+      "old_weight_percent": 10.0,
+      "new_weight_percent": 8.000000000000002,
+      "change_percentage_points": -1.9999999999999991
+    },
+    {
+      "ticker": "AMZN",
+      "old_weight_percent": 10.0,
+      "new_weight_percent": 8.000000000000002,
+      "change_percentage_points": -1.9999999999999991
+    },
+    {
+      "ticker": "GIS",
+      "old_weight_percent": 0.0,
+      "new_weight_percent": 20.0,
+      "change_percentage_points": 20.0
+    },
+    {
+      "ticker": "JNJ",
+      "old_weight_percent": 15.0,
+      "new_weight_percent": 12.0,
+      "change_percentage_points": -3.0
+    },
+    {
+      "ticker": "JPM",
+      "old_weight_percent": 15.0,
+      "new_weight_percent": 12.0,
+      "change_percentage_points": -3.0
+    },
+    {
+      "ticker": "MSFT",
+      "old_weight_percent": 15.0,
+      "new_weight_percent": 12.0,
+      "change_percentage_points": -3.0
+    },
+    {
+      "ticker": "NVDA",
+      "old_weight_percent": 15.0,
+      "new_weight_percent": 12.0,
+      "change_percentage_points": -3.0
+    },
+    {
+      "ticker": "PG",
+      "old_weight_percent": 10.0,
+      "new_weight_percent": 8.000000000000002,
+      "change_percentage_points": -1.9999999999999991
+    },
+    {
+      "ticker": "XOM",
+      "old_weight_percent": 10.0,
+      "new_weight_percent": 8.000000000000002,
+      "change_percentage_points": -1.9999999999999991
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+﻿strategy,status,test_days,total_return_percent,daily_volatility_percent,final_nav
+original,ok,251,22.883458850166715,0.6686095042145134,122.88345885016672
+proposed,ok,251,12.440112055686846,0.6339779279038766,112.44011205568685

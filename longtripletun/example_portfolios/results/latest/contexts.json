@@ -1,0 +1,336 @@
+[
+  {
+    "portfolio": "portfolio",
+    "input": [
+      {
+        "ticker": "AAPL",
+        "weight_percent": "60"
+      },
+      {
+        "ticker": "MSFT",
+        "weight_percent": "30"
+      },
+      {
+        "ticker": "GOOGL",
+        "weight_percent": "10"
+      }
+    ],
+    "price_source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+    "train_start": "2021-10-15",
+    "train_end": "2025-10-13",
+    "train_days": 1002,
+    "test_start": "2025-10-14",
+    "test_end": "2026-10-13",
+    "test_days": 251,
+    "pca_target": 0.95,
+    "fee_rate": 0.001,
+    "best": {
+      "ticker": "GIS",
+      "new_stock_weight_percent": 20.0,
+      "train_variance": 0.0001772999753629824,
+      "train_daily_volatility_percent": 1.3315403687571112,
+      "volatility_reduction_percentage_points": 0.27986000753882445,
+      "relative_volatility_reduction_percent": 17.367502928237357
+    },
+    "new_weights": [
+      {
+        "ticker": "AAPL",
+        "old_weight_percent": 60.0,
+        "new_weight_percent": 48.0,
+        "change_percentage_points": -12.0
+      },
+      {
+        "ticker": "GIS",
+        "old_weight_percent": 0.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": 20.0
+      },
+      {
+        "ticker": "GOOGL",
+        "old_weight_percent": 10.0,
+        "new_weight_percent": 8.000000000000002,
+        "change_percentage_points": -1.9999999999999991
+      },
+      {
+        "ticker": "MSFT",
+        "old_weight_percent": 30.0,
+        "new_weight_percent": 24.0,
+        "change_percentage_points": -6.0
+      }
+    ],
+    "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; one initial approximate fee on target gross buys plus sells; no slippage, tax or FX. Adjusted-price growth, not executable fills. NAV starts at 100 before fees; first Test return includes initial cost. Equal weight uses original holdings only."
+  },
+  {
+    "portfolio": "01_popular_large_cap",
+    "input": [
+      {
+        "ticker": "NVDA",
+        "weight_percent": "25"
+      },
+      {
+        "ticker": "MSFT",
+        "weight_percent": "25"
+      },
+      {
+        "ticker": "AAPL",
+        "weight_percent": "20"
+      },
+      {
+        "ticker": "AMZN",
+        "weight_percent": "20"
+      },
+      {
+        "ticker": "TSLA",
+        "weight_percent": "10"
+      }
+    ],
+    "price_source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+    "train_start": "2021-10-15",
+    "train_end": "2025-10-13",
+    "train_days": 1002,
+    "test_start": "2025-10-14",
+    "test_end": "2026-10-13",
+    "test_days": 251,
+    "pca_target": 0.95,
+    "fee_rate": 0.001,
+    "best": {
+      "ticker": "GIS",
+      "new_stock_weight_percent": 20.0,
+      "train_variance": 0.0002646530962184581,
+      "train_daily_volatility_percent": 1.6268162041806016,
+      "volatility_reduction_percentage_points": 0.4065637107276799,
+      "relative_volatility_reduction_percent": 19.994478540229828
+    },
+    "new_weights": [
+      {
+        "ticker": "AAPL",
+        "old_weight_percent": 20.0,
+        "new_weight_percent": 16.000000000000004,
+        "change_percentage_points": -3.9999999999999982
+      },
+      {
+        "ticker": "AMZN",
+        "old_weight_percent": 20.0,
+        "new_weight_percent": 16.000000000000004,
+        "change_percentage_points": -3.9999999999999982
+      },
+      {
+        "ticker": "GIS",
+        "old_weight_percent": 0.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": 20.0
+      },
+      {
+        "ticker": "MSFT",
+        "old_weight_percent": 25.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": -4.999999999999999
+      },
+      {
+        "ticker": "NVDA",
+        "old_weight_percent": 25.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": -4.999999999999999
+      },
+      {
+        "ticker": "TSLA",
+        "old_weight_percent": 10.0,
+        "new_weight_percent": 8.000000000000002,
+        "change_percentage_points": -1.9999999999999991
+      }
+    ],
+    "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; one initial approximate fee on target gross buys plus sells; no slippage, tax or FX. Adjusted-price growth, not executable fills. NAV starts at 100 before fees; first Test return includes initial cost. Equal weight uses original holdings only."
+  },
+  {
+    "portfolio": "02_multi_sector",
+    "input": [
+      {
+        "ticker": "NVDA",
+        "weight_percent": "15"
+      },
+      {
+        "ticker": "MSFT",
+        "weight_percent": "15"
+      },
+      {
+        "ticker": "AAPL",
+        "weight_percent": "10"
+      },
+      {
+        "ticker": "AMZN",
+        "weight_percent": "10"
+      },
+      {
+        "ticker": "JPM",
+        "weight_percent": "15"
+      },
+      {
+        "ticker": "JNJ",
+        "weight_percent": "15"
+      },
+      {
+        "ticker": "PG",
+        "weight_percent": "10"
+      },
+      {
+        "ticker": "XOM",
+        "weight_percent": "10"
+      }
+    ],
+    "price_source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+    "train_start": "2021-10-15",
+    "train_end": "2025-10-13",
+    "train_days": 1002,
+    "test_start": "2025-10-14",
+    "test_end": "2026-10-13",
+    "test_days": 251,
+    "pca_target": 0.95,
+    "fee_rate": 0.001,
+    "best": {
+      "ticker": "GIS",
+      "new_stock_weight_percent": 20.0,
+      "train_variance": 0.00010629130641803318,
+      "train_daily_volatility_percent": 1.0309767524926698,
+      "volatility_reduction_percentage_points": 0.1944319816330052,
+      "relative_volatility_reduction_percent": 15.866704407956728
+    },
+    "new_weights": [
+      {
+        "ticker": "AAPL",
+        "old_weight_percent": 10.0,
+        "new_weight_percent": 8.000000000000002,
+        "change_percentage_points": -1.9999999999999991
+      },
+      {
+        "ticker": "AMZN",
+        "old_weight_percent": 10.0,
+        "new_weight_percent": 8.000000000000002,
+        "change_percentage_points": -1.9999999999999991
+      },
+      {
+        "ticker": "GIS",
+        "old_weight_percent": 0.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": 20.0
+      },
+      {
+        "ticker": "JNJ",
+        "old_weight_percent": 15.0,
+        "new_weight_percent": 12.0,
+        "change_percentage_points": -3.0
+      },
+      {
+        "ticker": "JPM",
+        "old_weight_percent": 15.0,
+        "new_weight_percent": 12.0,
+        "change_percentage_points": -3.0
+      },
+      {
+        "ticker": "MSFT",
+        "old_weight_percent": 15.0,
+        "new_weight_percent": 12.0,
+        "change_percentage_points": -3.0
+      },
+      {
+        "ticker": "NVDA",
+        "old_weight_percent": 15.0,
+        "new_weight_percent": 12.0,
+        "change_percentage_points": -3.0
+      },
+      {
+        "ticker": "PG",
+        "old_weight_percent": 10.0,
+        "new_weight_percent": 8.000000000000002,
+        "change_percentage_points": -1.9999999999999991
+      },
+      {
+        "ticker": "XOM",
+        "old_weight_percent": 10.0,
+        "new_weight_percent": 8.000000000000002,
+        "change_percentage_points": -1.9999999999999991
+      }
+    ],
+    "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; one initial approximate fee on target gross buys plus sells; no slippage, tax or FX. Adjusted-price growth, not executable fills. NAV starts at 100 before fees; first Test return includes initial cost. Equal weight uses original holdings only."
+  },
+  {
+    "portfolio": "03_growth_concentrated",
+    "input": [
+      {
+        "ticker": "NVDA",
+        "weight_percent": "25"
+      },
+      {
+        "ticker": "AMD",
+        "weight_percent": "20"
+      },
+      {
+        "ticker": "META",
+        "weight_percent": "20"
+      },
+      {
+        "ticker": "GOOGL",
+        "weight_percent": "20"
+      },
+      {
+        "ticker": "TSLA",
+        "weight_percent": "15"
+      }
+    ],
+    "price_source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+    "train_start": "2021-10-15",
+    "train_end": "2025-10-13",
+    "train_days": 1002,
+    "test_start": "2025-10-14",
+    "test_end": "2026-10-13",
+    "test_days": 251,
+    "pca_target": 0.95,
+    "fee_rate": 0.001,
+    "best": {
+      "ticker": "GIS",
+      "new_stock_weight_percent": 20.0,
+      "train_variance": 0.0003838008842538553,
+      "train_daily_volatility_percent": 1.959083674205508,
+      "volatility_reduction_percentage_points": 0.5076490612678727,
+      "relative_volatility_reduction_percent": 20.57981612549735
+    },
+    "new_weights": [
+      {
+        "ticker": "AMD",
+        "old_weight_percent": 20.0,
+        "new_weight_percent": 16.000000000000004,
+        "change_percentage_points": -3.9999999999999982
+      },
+      {
+        "ticker": "GIS",
+        "old_weight_percent": 0.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": 20.0
+      },
+      {
+        "ticker": "GOOGL",
+        "old_weight_percent": 20.0,
+        "new_weight_percent": 16.000000000000004,
+        "change_percentage_points": -3.9999999999999982
+      },
+      {
+        "ticker": "META",
+        "old_weight_percent": 20.0,
+        "new_weight_percent": 16.000000000000004,
+        "change_percentage_points": -3.9999999999999982
+      },
+      {
+        "ticker": "NVDA",
+        "old_weight_percent": 25.0,
+        "new_weight_percent": 20.0,
+        "change_percentage_points": -4.999999999999999
+      },
+      {
+        "ticker": "TSLA",
+        "old_weight_percent": 15.0,
+        "new_weight_percent": 12.0,
+        "change_percentage_points": -3.0
+      }
+    ],
+    "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; one initial approximate fee on target gross buys plus sells; no slippage, tax or FX. Adjusted-price growth, not executable fills. NAV starts at 100 before fees; first Test return includes initial cost. Equal weight uses original holdings only."
+  }
+]

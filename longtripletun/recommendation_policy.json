@@ -1,0 +1,8 @@
+{
+  "fit_fraction_of_train": 0.75,
+  "minimum_fit_days": 150,
+  "minimum_validation_days": 60,
+  "minimum_sd_reduction_percent": 5.0,
+  "maximum_return_loss_pp": 2.0,
+  "maximum_drawdown_worsening_pp": 0.0
+}

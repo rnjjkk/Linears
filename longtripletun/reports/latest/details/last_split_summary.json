@@ -1,0 +1,21 @@
+{
+  "source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+  "policy": "Chronological 80/20 before missing-date filtering",
+  "calendar_boundary": "2025-10-13",
+  "tickers": [
+    "NVDA",
+    "MSFT",
+    "AAPL",
+    "AMZN",
+    "JPM",
+    "JNJ",
+    "PG",
+    "XOM"
+  ],
+  "train_days": 1002,
+  "train_start": "2021-10-15",
+  "train_end": "2025-10-13",
+  "test_days": 251,
+  "test_start": "2025-10-14",
+  "test_end": "2026-10-13"
+}

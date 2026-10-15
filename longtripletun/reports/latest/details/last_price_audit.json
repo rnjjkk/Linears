@@ -1,0 +1,25 @@
+{
+  "source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+  "total_rows": 630762,
+  "total_stocks": 503,
+  "selected_rows": 10032,
+  "price_start": "2021-10-14",
+  "price_end": "2026-10-13",
+  "price_days": 1254,
+  "potential_return_days": 1253,
+  "train_boundary_80pct": "2025-10-13",
+  "return_days": 1253,
+  "invalid_selected_prices": 0,
+  "missing_selected_price_cells": 0,
+  "skipped_return_dates": [],
+  "first_example": {
+    "ticker": "NVDA",
+    "previous_day": "2021-10-14",
+    "day": "2021-10-15",
+    "previous_price": 21.65064239501953,
+    "price": 21.766132354736328,
+    "return": 0.005334250947831576
+  },
+  "policy": "No filling or outlier clipping; keep only adjacent observed market-date pairs with complete portfolio prices.",
+  "limitation": "Calendar inferred from CSV; dates missing for ALL stocks cannot be detected without an exchange calendar."
+}

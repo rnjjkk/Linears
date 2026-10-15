@@ -1,0 +1,71 @@
+{
+  "portfolio_source": "C:\\kmitl\\Year2\\T1\\linear\\project\\Linears\\longtripletun\\example_portfolios\\02_multi_sector.csv",
+  "portfolio_holdings": [
+    {
+      "ticker": "NVDA",
+      "weight_percent": 15.0
+    },
+    {
+      "ticker": "MSFT",
+      "weight_percent": 15.0
+    },
+    {
+      "ticker": "AAPL",
+      "weight_percent": 10.0
+    },
+    {
+      "ticker": "AMZN",
+      "weight_percent": 10.0
+    },
+    {
+      "ticker": "JPM",
+      "weight_percent": 15.0
+    },
+    {
+      "ticker": "JNJ",
+      "weight_percent": 15.0
+    },
+    {
+      "ticker": "PG",
+      "weight_percent": 10.0
+    },
+    {
+      "ticker": "XOM",
+      "weight_percent": 10.0
+    }
+  ],
+  "source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
+  "train_start": "2021-10-15",
+  "train_end": "2025-10-13",
+  "train_days": 1002,
+  "test_start": "2025-10-14",
+  "test_end": "2026-10-13",
+  "test_days": 251,
+  "fee_rate": 0.001,
+  "pca_target": 0.95,
+  "generated_at": "2026-10-16T01:08:02+07:00",
+  "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; one initial approximate fee on target gross buys plus sells; no slippage, tax or FX. Adjusted-price growth, not executable fills. NAV starts at 100 before fees; first Test return includes initial cost. Equal weight uses original holdings only.",
+  "pca_components": 235,
+  "pca_explained_variance": 0.9504538606047213,
+  "eligible_stocks": 491,
+  "shortlist": [
+    "GIS",
+    "KR",
+    "SJM",
+    "HRL",
+    "NOC",
+    "DG",
+    "LMT",
+    "CNC",
+    "ED",
+    "BMY"
+  ],
+  "chosen_on_train": {
+    "ticker": "GIS",
+    "new_stock_weight_percent": 20.0,
+    "train_variance": 0.00010629130641803318,
+    "train_daily_volatility_percent": 1.0309767524926698,
+    "volatility_reduction_percentage_points": 0.1944319816330052,
+    "relative_volatility_reduction_percent": 15.866704407956728
+  }
+}
