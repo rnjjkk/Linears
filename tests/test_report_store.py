@@ -7,6 +7,51 @@ from longtripletun.report_store import begin_report, publish_report, remove_gene
 
 
 class ReportStoreTests(unittest.TestCase):
+    def test_new_portfolio_replaces_report_and_removes_stale_details(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
+            root = Path(temp)
+            first = begin_report(root)
+            (first/'report.md').write_text('portfolio A')
+            (first/'details').mkdir()
+            (first/'details'/'recommended_weights.csv').write_text('old weights')
+            (first/'details'/'approved_test').mkdir()
+            (first/'details'/'approved_test'/'risk_levels.csv').write_text('old approved levels')
+            publish_report(first)
+            second = begin_report(root)
+            (second/'report.md').write_text('portfolio B: keep original')
+            (second/'details').mkdir()
+            (second/'details'/'recommended_weights.csv').write_text('level,ticker,weight_percent')
+            latest, warnings = publish_report(second)
+            self.assertFalse(warnings)
+            self.assertEqual((latest/'report.md').read_text(), 'portfolio B: keep original')
+            self.assertEqual((latest/'details'/'recommended_weights.csv').read_text(), 'level,ticker,weight_percent')
+            self.assertFalse((latest/'details'/'approved_test').exists())
+            self.assertEqual({p.name for p in root.iterdir()}, {'latest'})
+
+    def test_retry_after_interruption_keeps_completed_report(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
+            root = Path(temp)
+            first = begin_report(root)
+            (first/'report.md').write_text('completed')
+            publish_report(first)
+            interrupted = begin_report(root)
+            (interrupted/'metrics.csv').write_text('incomplete calculation')
+            retry = begin_report(root)
+            self.assertEqual((root/'latest'/'report.md').read_text(), 'completed')
+            self.assertFalse((retry/'metrics.csv').exists())
+            (retry/'report.md').write_text('new completed report')
+            publish_report(retry)
+            self.assertEqual({p.name for p in root.iterdir()}, {'latest'})
+
+    def test_unknown_file_in_pending_report_is_preserved(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
+            root = Path(temp)
+            draft = begin_report(root)
+            (draft/'personal_notes.txt').write_text('keep')
+            with self.assertRaises(ValueError):
+                begin_report(root)
+            self.assertEqual((draft/'personal_notes.txt').read_text(), 'keep')
+
     def test_locked_directory_updates_files(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
             root = Path(temp)

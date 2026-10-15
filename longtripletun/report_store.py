@@ -78,22 +78,35 @@ def begin_report(root):
     if root.is_symlink() or root.is_junction():
         raise ValueError('รากรายงานต้องไม่เป็นลิงก์')
     root.mkdir(parents=True, exist_ok=True)
-    folder = root / ('.building_' + uuid.uuid4().hex)
+    # One reusable staging directory; successful runs leave only latest.
+    # Preserve the last completed report if the preceding run was interrupted.
+    backup = root / '.previous_current'
+    latest = root / 'latest'
+    if backup.exists():
+        _safe_tree(backup, root)
+        if latest.exists():
+            _safe_tree(latest, root)
+            remove_generated(backup, root)
+        else:
+            backup.rename(latest)
+    folder = root / '.building_current'
+    if folder.exists():
+        remove_generated(folder, root)
     folder.mkdir()
     return folder
 
 
 def publish_report(folder):
-    """สลับ latest หลังรายงานครบ; ถ้าสลับไม่สำเร็จคืนรายงานเดิม."""
+    """เขียนทับรายงาน latest ชุดเดียวหลังทำครบ; ถ้าล้มเหลวคืนรายงานเดิม."""
     folder = Path(folder)
     root = folder.parent.resolve()
-    if not re.fullmatch(r'\.building_[0-9a-f]{32}', folder.name):
+    if folder.name != '.building_current' and not re.fullmatch(r'\.building_[0-9a-f]{32}', folder.name):
         raise ValueError('เผยแพร่ได้เฉพาะโฟลเดอร์ที่ begin_report สร้าง')
     _safe_tree(folder, root)
     if not any((folder / name).is_file() for name in ('report.md', 'comparison.md')):
         raise ValueError('ยังไม่มีรายงานที่เสร็จสมบูรณ์')
     latest = root / 'latest'
-    backup = root / ('.previous_' + uuid.uuid4().hex)
+    backup = root / '.previous_current'
     if latest.exists():
         _safe_tree(latest, root)
         try:

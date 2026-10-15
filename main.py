@@ -692,7 +692,7 @@ try:
         print("ความผันผวนสุทธิรวม fee ในผลตอบแทนวันแรก; ตารางก่อนต้นทุนยังอยู่ใน holdout_summary.csv")
         print("ค่าธรรมเนียมเป็นแบบจำลองประมาณการ ไม่รวมภาษี slippage หรือ FX และไม่ได้เปลี่ยนหุ้นที่เลือกจาก Train")
 
-        # 38–40. คำนวณ Drawdown สร้างกราฟ และเก็บรายงานแต่ละรอบแยกโฟลเดอร์
+        # 38–40. คำนวณ Drawdown สร้างกราฟ และเขียนทับรายงานล่าสุดชุดเดียว
         from longtripletun.report_charts import save_report
         report_context = {
             'portfolio_source': str(file_path.resolve()),
