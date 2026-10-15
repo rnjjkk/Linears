@@ -2,10 +2,11 @@
 
 import csv
 import json
-from price_data import load_price_returns
+from longtripletun.price_data import load_price_returns
 import math
 from pathlib import Path
 import sys
+from longtripletun.project_paths import (PROJECT_ROOT, EXAMPLES_DIR, REPORTS_DIR, default_price_path, resolve_portfolio)
 
 # ทำให้ Terminal บน Windows แสดงภาษาไทยได้
 if hasattr(sys.stdout, "reconfigure"):
@@ -13,14 +14,12 @@ if hasattr(sys.stdout, "reconfigure"):
 
 try:
     # 1. รับชื่อไฟล์หรือพาธจากผู้ใช้
-    filename = input("กรอกชื่อไฟล์ CSV [Enter = portfolio.csv]: ").strip().strip('"')
+    filename = input("กรอกชื่อไฟล์ CSV [Enter = examples/portfolio.csv]: ").strip().strip('"')
     if filename == "":
         filename = "portfolio.csv"
 
-    # ถ้ากรอกแค่ชื่อไฟล์ ให้หาในโฟลเดอร์เดียวกับ main.py
-    file_path = Path(filename)
-    if not file_path.is_absolute():
-        file_path = Path(__file__).resolve().parent / file_path
+    # รับพาธเต็ม พาธจากรากโปรเจกต์ หรือชื่อ CSV ใน examples/
+    file_path = resolve_portfolio(filename)
 
     # 2. อ่าน CSV: หัวคอลัมน์เป็นชื่อข้อมูลของแต่ละแถว
     with open(file_path, encoding="utf-8-sig", newline="") as file:
@@ -91,12 +90,8 @@ try:
         raise ValueError("กรุณาเลือก 1 หรือ 2")
 
     if data_mode == "1":
-        # stockdata.py บันทึกไฟล์ตาม working directory ตอนรัน
-        # ตรวจทั้งข้าง stockdata.py และโฟลเดอร์ project ที่พบไฟล์จริงในเครื่องนี้
-        base_path = Path(__file__).resolve().parent
-        default_paths = [base_path.parent / "sp500_daily_5years.csv",
-                         base_path.parent.parent / "sp500_daily_5years.csv"]
-        default_path = next((path for path in default_paths if path.is_file()), default_paths[0])
+        base_path = PROJECT_ROOT
+        default_path = default_price_path()
         print("ไฟล์ราคาเริ่มต้น:", default_path)
         price_input = input("พาธ CSV ราคา [Enter = ใช้ไฟล์ข้างบน]: ").strip().strip('"')
         price_path = Path(price_input) if price_input else default_path
@@ -115,14 +110,16 @@ try:
         print(f"({example['price']:.6f} / {example['previous_price']:.6f}) - 1"
               f" = {example['return']:.8f} หรือ {example['return'] * 100:.4f}%")
         # เก็บ audit ของการรันล่าสุดเพื่อเปิดตรวจวันและข้อมูลที่ถูกตัด
-        audit_path = base_path / "last_price_audit.json"
+        scratch_path = REPORTS_DIR / "_working"
+        scratch_path.mkdir(parents=True, exist_ok=True)
+        audit_path = scratch_path / "last_price_audit.json"
         audit_path.write_text(json.dumps(price_audit, ensure_ascii=False, indent=2), encoding="utf-8")
         print("บันทึกรายละเอียดการอ่านราคา:", audit_path)
         print("ขั้นต่อไปจะแบ่ง Train/Test ก่อนคำนวณสถิติ ยังไม่มีคำแนะนำลงทุน")
     else:
         data_label = "ข้อมูลสมมติ ไม่ใช่ข้อมูลตลาดจริง"
         # 8. อ่านผลตอบแทนสมมติ 1 วัน เก็บคู่ชื่อหุ้นเพื่อไม่พึ่งลำดับแถว CSV
-        returns_path = Path(__file__).resolve().parent / "daily_returns_example.csv"
+        returns_path = EXAMPLES_DIR / "learning" / "daily_returns_example.csv"
         print("\n--- ผลตอบแทนสมมติ 1 วัน สำหรับฝึกคำนวณ ไม่ใช่ข้อมูลตลาดจริง ---")
         print("ไฟล์ผลตอบแทน:", returns_path)
         returns_by_ticker = {}
@@ -164,7 +161,7 @@ try:
         print(f"ผลตอบแทนพอร์ตในวันสมมตินี้: {portfolio_return * 100:.2f}%")
     #------------------------------------------------------------------------------------------------------------
         # 10. อ่านข้อมูลหลายวัน: แต่ละแถวคือหนึ่งวัน แต่ละคอลัมน์หุ้นคือผลตอบแทน (%)
-        history_path = Path(__file__).resolve().parent / "multi_day_returns_example.csv"
+        history_path = EXAMPLES_DIR / "learning" / "multi_day_returns_example.csv"
         days = []
         returns_matrix = []
 
@@ -233,7 +230,7 @@ try:
             "train_days": len(train_days), "train_start": train_days[0], "train_end": train_days[-1],
             "test_days": len(test_days), "test_start": test_days[0], "test_end": test_days[-1],
         }
-        (base_path / "last_split_summary.json").write_text(
+        (scratch_path / "last_split_summary.json").write_text(
             json.dumps(split_summary, ensure_ascii=False, indent=2), encoding="utf-8")
     else:
         print("\nโหมดตัวอย่างสมมติ: ใช้ข้อมูลทุกวันเพื่อฝึกสูตร ไม่แบ่ง Train/Test")
@@ -511,7 +508,7 @@ try:
 
     # 27–29. ขยาย universe ไปยังหุ้นนอกพอร์ต ด้วย Train วันเดียวกันเท่านั้น
     if data_mode == "1" and total_variance > 0 and not all(sd == 0 for sd in standard_deviations):
-        from candidate_analysis import screen_candidates
+        from longtripletun.candidate_analysis import screen_candidates
 
         print("\n--- ขั้น 27: ตรวจข้อมูล Train ของหุ้นผู้สมัครจาก CSV ---")
         screening = screen_candidates(price_path, train_days, tickers, weights,
@@ -542,7 +539,7 @@ try:
               "max_absolute_train_return_percent", "shortlisted"]),
             ("candidate_exclusions.csv", screening['excluded'], ["ticker", "reason"]),
         ]:
-            with (base_path / filename).open("w", encoding="utf-8-sig", newline="") as file:
+            with (scratch_path / filename).open("w", encoding="utf-8-sig", newline="") as file:
                 writer = csv.DictWriter(file, fieldnames=fields)
                 writer.writeheader()
                 writer.writerows(rows)
@@ -553,7 +550,7 @@ try:
         print("ชุดหุ้นมาจากรายชื่อใน CSV; การใช้สมาชิกดัชนีปัจจุบันย้อนอดีตอาจมี survivorship bias")
 
         # ด่านคำแนะนำ: สร้างจาก Fit/Validation ภายใน Train ก่อนอ่านผล Test
-        from recommendation import build_recommendation, concentration_summary, save_recommendation
+        from longtripletun.recommendation import build_recommendation, concentration_summary, save_recommendation
         concentration = concentration_summary(screening['tickers'], screening['weights'], screening['covariance'])
         print("\nกำลังตรวจความคุ้มค่าด้วย Fit/Validation ภายใน Train; ไม่ใช้ Test เลือกคำแนะนำ")
         recommendation = build_recommendation(price_path, train_days, tickers, weights,
@@ -562,7 +559,7 @@ try:
         print("ตารางขั้น 30–43 ต่อไปเป็นการวิเคราะห์เดิม; คำแนะนำที่ผ่านเกณฑ์จะสรุปอีกครั้งท้ายโปรแกรม")
 
         # 30. ทดลองทุกคู่ของหุ้นผู้สมัครกับสัดส่วน 5%, 10%, 15%, 20%
-        from rebalance import try_rebalancing
+        from longtripletun.rebalance import try_rebalancing
         rebalancing = try_rebalancing(screening)
         print(f"\n--- ขั้น 30: ทดลองปรับพอร์ตทั้งหมด {len(rebalancing['trials'])} ทางเลือก ---")
         print("ใช้ Covariance เต็มของ Train; ไม่ใช้ covariance ที่ลดมิติด้วย PCA")
@@ -594,7 +591,7 @@ try:
             ("proposed_weights.csv", rebalancing['weight_changes'],
              ['ticker', 'old_weight_percent', 'new_weight_percent', 'change_percentage_points']),
         ]:
-            with (base_path / filename).open("w", encoding="utf-8-sig", newline="") as file:
+            with (scratch_path / filename).open("w", encoding="utf-8-sig", newline="") as file:
                 writer = csv.DictWriter(file, fieldnames=fields)
                 writer.writeheader()
                 writer.writerows(rows)
@@ -603,7 +600,7 @@ try:
         print("pp = จุดเปอร์เซ็นต์; ผลนี้ดีที่สุดเฉพาะหุ้นและสัดส่วนที่ทดลอง ไม่ใช่ทุกพอร์ตที่เป็นไปได้")
 
         # 33. ล็อกพอร์ตที่เลือกแล้ว ประเมิน Test โดยไม่มีการเลือกหุ้นใหม่
-        from holdout import evaluate_holdout
+        from longtripletun.holdout import evaluate_holdout
         holdout_result = evaluate_holdout(price_path, train_days[-1], test_days,
                                           screening['tickers'], screening['weights'], rebalancing['weights'])
         print("\n--- ขั้น 33: ทดสอบพอร์ตที่ล็อกไว้บน Test ---")
@@ -640,11 +637,11 @@ try:
             ('holdout_weights.csv', holdout_result['weights'],
              ['strategy', 'ticker', 'initial_weight_percent', 'final_weight_percent']),
         ]:
-            with (base_path / filename).open('w', encoding='utf-8-sig', newline='') as file:
+            with (scratch_path / filename).open('w', encoding='utf-8-sig', newline='') as file:
                 writer = csv.DictWriter(file, fieldnames=fields)
                 writer.writeheader()
                 writer.writerows(rows)
-        (base_path / 'holdout_assumptions.json').write_text(json.dumps({
+        (scratch_path / 'holdout_assumptions.json').write_text(json.dumps({
             'source': str(price_path.resolve()), 'anchor_day': holdout_result['anchor_day'],
             'test_start': holdout_result['test_start'], 'test_end': holdout_result['test_end'],
             'assumptions': holdout_result['assumptions'],
@@ -655,7 +652,7 @@ try:
         print("นี่เป็นการจำลองด้วยราคาปรับแล้ว ไม่ใช่คำสั่งซื้อขายจริง และยังไม่ประเมินต้นทุนการซื้อขาย")
 
         # 36. เพิ่ม baseline: แบ่งเท่ากันเฉพาะหุ้นเดิม และคิดค่าธรรมเนียมตั้งต้น
-        from holdout import evaluate_costs
+        from longtripletun.holdout import evaluate_costs
         fee_rate = 0.001  # ค่าธรรมเนียมสมมติ 0.1% ต่อมูลค่าซื้อหรือขาย ไม่ใช่อัตราของโบรกเกอร์จริง
         cost_result = evaluate_costs(price_path, train_days[-1], test_days,
                                     screening['tickers'], screening['weights'], rebalancing['weights'],
@@ -682,11 +679,11 @@ try:
             ('cost_weights.csv', cost_result['weights'],
              ['strategy', 'ticker', 'initial_weight_percent', 'final_weight_percent']),
         ]:
-            with (base_path / filename).open('w', encoding='utf-8-sig', newline='') as file:
+            with (scratch_path / filename).open('w', encoding='utf-8-sig', newline='') as file:
                 writer = csv.DictWriter(file, fieldnames=fields)
                 writer.writeheader()
                 writer.writerows(rows)
-        (base_path / 'cost_assumptions.json').write_text(json.dumps({
+        (scratch_path / 'cost_assumptions.json').write_text(json.dumps({
             'fee_rate': fee_rate, 'assumptions': cost_result['assumptions'],
             'source': str(price_path.resolve()), 'anchor_day': train_days[-1],
             'test_start': test_days[0], 'test_end': test_days[-1],
@@ -696,7 +693,7 @@ try:
         print("ค่าธรรมเนียมเป็นแบบจำลองประมาณการ ไม่รวมภาษี slippage หรือ FX และไม่ได้เปลี่ยนหุ้นที่เลือกจาก Train")
 
         # 38–40. คำนวณ Drawdown สร้างกราฟ และเก็บรายงานแต่ละรอบแยกโฟลเดอร์
-        from report_charts import save_report
+        from longtripletun.report_charts import save_report
         report_context = {
             'portfolio_source': str(file_path.resolve()),
             'portfolio_holdings': [{'ticker': ticker, 'weight_percent': weight * 100}
@@ -706,7 +703,7 @@ try:
             'test_days': len(test_days), 'fee_rate': fee_rate, 'pca_target': pca_target,
         }
         report_folder, report_metrics = save_report(cost_result, rebalancing, screening,
-                                                    report_context, base_path / 'reports')
+                                                    report_context, REPORTS_DIR)
         print("\n--- ขั้น 38–40: กราฟและ Maximum Drawdown หลังต้นทุน ---")
         for row in report_metrics:
             if row['max_drawdown_percent'] is not None:
@@ -715,7 +712,7 @@ try:
         print("บันทึกรายงานและกราฟไว้ที่:", report_folder)
         print("เปิด report.md แล้วกด Ctrl+Shift+V ใน VS Code เพื่ออ่านพร้อมกราฟ")
         # 41–43. เลือก 1–3 ระดับจาก Train แล้วอธิบายผล Test และตัวอย่างเงิน
-        from risk_levels import evaluate_risk_levels, save_comparison
+        from longtripletun.risk_levels import evaluate_risk_levels, save_comparison
         level_result = evaluate_risk_levels(price_path, train_days[-1], test_days,
                                              screening, rebalancing, fee_rate=fee_rate,
                                              capital=100000.0)
@@ -736,12 +733,12 @@ try:
         print(recommendation_text)
         print("อ่าน recommendation.md และ recommended_weights.csv ในโฟลเดอร์รายงานรอบนี้")
         # เผยแพร่ latest เมื่อทำรายงานครบแล้วเท่านั้น รายงานก่อนหน้าจึงยังอยู่หากรอบใหม่ล้มเหลว
-        from user_summary import write_user_summary
-        from report_store import publish_report, stage_loose_outputs, remove_loose_outputs
+        from longtripletun.user_summary import write_user_summary
+        from longtripletun.report_store import publish_report, stage_loose_outputs, remove_loose_outputs
         write_user_summary(report_folder, recommendation, concentration, level_result, report_context)
-        loose_outputs = stage_loose_outputs(base_path, report_folder, protected=[file_path, price_path])
+        loose_outputs = stage_loose_outputs(scratch_path, report_folder, protected=[file_path, price_path])
         report_folder, cleanup_warnings = publish_report(report_folder)
-        remove_loose_outputs(base_path, loose_outputs)
+        remove_loose_outputs(scratch_path, loose_outputs)
         print("\nสรุปสำหรับผู้ใช้:", report_folder / 'report.md')
         print("รายงานล่าสุดอยู่ที่เดิมทุกครั้ง รายละเอียดคำนวณเก็บในโฟลเดอร์ details")
         for warning in cleanup_warnings:

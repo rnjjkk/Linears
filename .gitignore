@@ -10,3 +10,15 @@ __pycache__/
 .update_*
 tempCodeRunnerFile.py
 main_unsaved_backup.txt
+
+# Local datasets, temporary calculation files and editor caches
+/data/raw/
+/reports/_working/
+.pytest_cache/
+.coverage
+htmlcov/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.log
