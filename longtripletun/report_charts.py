@@ -47,7 +47,7 @@ def save_report(cost_result, rebalancing, screening, context, output_root):
                 daily.append({**item, 'drawdown_percent': float(dd)})
         metrics.append(row)
 
-    # บันทึกข้อมูลรอบนี้ไว้คู่กับกราฟ ไม่ต้องอาศัย CSV latest ซึ่งอาจถูกเขียนทับภายหลัง
+    # บันทึกข้อมูลรอบนี้ไว้คู่กับกราฟ ไม่ต้องอาศัย CSV ผลลัพธ์ ซึ่งอาจถูกเขียนทับภายหลัง
     for filename, rows, fields in [
         ('metrics.csv', metrics, list(metrics[0])),
         ('daily.csv', daily, ['strategy', 'date', 'gross_nav', 'net_nav', 'net_daily_return_percent', 'drawdown_percent']),

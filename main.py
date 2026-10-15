@@ -732,7 +732,7 @@ try:
         print("\n--- ขั้น 44: คำแนะนำหลังตรวจความคุ้มค่า ---")
         print(recommendation_text)
         print("อ่าน recommendation.md และ recommended_weights.csv ในโฟลเดอร์รายงานรอบนี้")
-        # เผยแพร่ latest เมื่อทำรายงานครบแล้วเท่านั้น รายงานก่อนหน้าจึงยังอยู่หากรอบใหม่ล้มเหลว
+        # เผยแพร่รายงาน เมื่อทำรายงานครบแล้วเท่านั้น รายงานก่อนหน้าจึงยังอยู่หากรอบใหม่ล้มเหลว
         from longtripletun.user_summary import write_user_summary
         from longtripletun.report_store import publish_report, stage_loose_outputs, remove_loose_outputs
         write_user_summary(report_folder, recommendation, concentration, level_result, report_context)
@@ -752,7 +752,7 @@ except ValueError as error:
     print("ข้อมูลไม่ถูกต้อง:", error)
 except (OSError, UnicodeError, csv.Error) as error:
     print("อ่านหรือบันทึกไฟล์ไม่สำเร็จ:", error)
-    print("หากรายงาน latest ไม่เปลี่ยน แสดงว่ารอบนี้ยังเผยแพร่ไม่สำเร็จ โปรดดูข้อความผิดพลาดข้างบน")
+    print("หากรายงานปัจจุบัน ไม่เปลี่ยน แสดงว่ารอบนี้ยังเผยแพร่ไม่สำเร็จ โปรดดูข้อความผิดพลาดข้างบน")
 except ImportError as error:
     print("โหลดไลบรารีไม่ได้:", error)
     print("ให้รัน python -m pip install numpy matplotlib แล้วลองใหม่")

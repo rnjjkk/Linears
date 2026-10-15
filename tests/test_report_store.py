@@ -26,7 +26,7 @@ class ReportStoreTests(unittest.TestCase):
             self.assertEqual((latest/'report.md').read_text(), 'portfolio B: keep original')
             self.assertEqual((latest/'details'/'recommended_weights.csv').read_text(), 'level,ticker,weight_percent')
             self.assertFalse((latest/'details'/'approved_test').exists())
-            self.assertEqual({p.name for p in root.iterdir()}, {'latest'})
+            self.assertEqual({p.name for p in root.iterdir()}, {'report.md', 'details', '.report_files.json'})
 
     def test_retry_after_interruption_keeps_completed_report(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
@@ -37,11 +37,11 @@ class ReportStoreTests(unittest.TestCase):
             interrupted = begin_report(root)
             (interrupted/'metrics.csv').write_text('incomplete calculation')
             retry = begin_report(root)
-            self.assertEqual((root/'latest'/'report.md').read_text(), 'completed')
+            self.assertEqual((root/'report.md').read_text(), 'completed')
             self.assertFalse((retry/'metrics.csv').exists())
             (retry/'report.md').write_text('new completed report')
             publish_report(retry)
-            self.assertEqual({p.name for p in root.iterdir()}, {'latest'})
+            self.assertEqual({p.name for p in root.iterdir()}, {'report.md', '.report_files.json'})
 
     def test_unknown_file_in_pending_report_is_preserved(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
@@ -51,6 +51,20 @@ class ReportStoreTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 begin_report(root)
             self.assertEqual((draft/'personal_notes.txt').read_text(), 'keep')
+
+    def test_main_report_preserves_comparison_report(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
+            root = Path(temp)
+            comparison = root/'comparisons'
+            comparison.mkdir()
+            (comparison/'comparison.md').write_text('keep comparison')
+            draft = begin_report(root)
+            (draft/'report.md').write_text('main result')
+            result, warnings = publish_report(draft)
+            self.assertEqual(result, root)
+            self.assertFalse(warnings)
+            self.assertEqual((comparison/'comparison.md').read_text(), 'keep comparison')
+            self.assertFalse((root/'latest').exists())
 
     def test_locked_directory_updates_files(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
@@ -109,7 +123,7 @@ class ReportStoreTests(unittest.TestCase):
             (second/'report.md').write_text('second')
             publish_report(second)
             self.assertEqual((latest/'report.md').read_text(), 'second')
-            self.assertEqual([p.name for p in root.iterdir()], ['latest'])
+            self.assertEqual({p.name for p in root.iterdir()}, {'report.md', '.report_files.json'})
 
     def test_unknown_files_and_inputs_preserved(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temp:
@@ -135,14 +149,18 @@ class ReportStoreTests(unittest.TestCase):
             publish_report(first)
             draft = begin_report(root)
             (draft/'report.md').write_text('new')
-            original = Path.rename
-            def fail_stage(path, target):
-                if path == draft:
+            import longtripletun.report_store as store
+            original = store._replace_file
+            failed = False
+            def fail_stage(source, target):
+                nonlocal failed
+                if source.parent == draft and source.name == 'report.md' and not failed:
+                    failed = True
                     raise OSError('simulated publish failure')
-                return original(path, target)
-            with patch.object(Path, 'rename', fail_stage), self.assertRaises(OSError):
+                return original(source, target)
+            with patch('longtripletun.report_store._replace_file', fail_stage), self.assertRaises(OSError):
                 publish_report(draft)
-            self.assertEqual((root/'latest'/'report.md').read_text(), 'old')
+            self.assertEqual((root/'report.md').read_text(), 'old')
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@
 | recommendation.py | Fit/Validation gate, HHI และความสัมพันธ์พอร์ต |
 | report_charts.py | NAV, Drawdown, กราฟและตาราง |
 | user_summary.py | สรุปภาษาไทยสำหรับผู้ใช้ |
-| report_store.py | เผยแพร่ latest หลังสำเร็จ ป้องกันลบไฟล์ที่ไม่รู้จัก |
+| report_store.py | เผยแพร่รายงาน หลังสำเร็จ ป้องกันลบไฟล์ที่ไม่รู้จัก |
 | project_paths.py | พาธ input/config/data/reports อ้างจากรากโปรเจกต์ |
 | stock_symbols.py | อ่านรายชื่อ Slickcharts สำหรับเครื่องมือดาวน์โหลด |
 

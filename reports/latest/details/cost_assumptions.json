@@ -1,8 +1,0 @@
-{
-  "fee_rate": 0.001,
-  "assumptions": "Ideal initial allocation at last Train adjusted close; buy and hold; one initial approximate fee on target gross buys plus sells; no slippage, tax or FX. Adjusted-price growth, not executable fills. NAV starts at 100 before fees; first Test return includes initial cost. Equal weight uses original holdings only.",
-  "source": "C:\\kmitl\\Year2\\T1\\linear\\project\\sp500_daily_5years.csv",
-  "anchor_day": "2025-10-13",
-  "test_start": "2025-10-14",
-  "test_end": "2026-10-13"
-}

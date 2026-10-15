@@ -4,8 +4,10 @@ import re
 import uuid
 import os
 import shutil
+import json
 
 GENERATED_FILES = {
+    '.report_files.json',
     'report.md', 'recommendation.md', 'recommendation.json', 'recommended_weights.csv',
     'risk_levels.md', 'risk_levels.csv', 'risk_level_weights.csv', 'metrics.csv', 'daily.csv',
     'proposed_weights.csv', 'run_context.json', 'equity.png', 'drawdown.png', 'comparison.png',
@@ -74,21 +76,14 @@ def remove_generated(folder, root):
 
 
 def begin_report(root):
+    """Build in a reusable temporary folder without changing the completed report."""
     root = Path(root)
     if root.is_symlink() or root.is_junction():
         raise ValueError('รากรายงานต้องไม่เป็นลิงก์')
+    root = root.resolve()
     root.mkdir(parents=True, exist_ok=True)
-    # One reusable staging directory; successful runs leave only latest.
-    # Preserve the last completed report if the preceding run was interrupted.
-    backup = root / '.previous_current'
-    latest = root / 'latest'
-    if backup.exists():
-        _safe_tree(backup, root)
-        if latest.exists():
-            _safe_tree(latest, root)
-            remove_generated(backup, root)
-        else:
-            backup.rename(latest)
+    if (root / '.previous_current').exists():
+        raise ValueError('พบข้อมูลสำรองจากการเผยแพร่ที่ถูกขัดจังหวะ กรุณาตรวจข้อมูลสำรองก่อนรันใหม่')
     folder = root / '.building_current'
     if folder.exists():
         remove_generated(folder, root)
@@ -96,38 +91,106 @@ def begin_report(root):
     return folder
 
 
+def _checked_path(root, relative):
+    path = Path(relative)
+    if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0].startswith('.'):
+        raise ValueError('พาธไฟล์รายงานไม่ถูกต้อง')
+    target = root / path
+    if target.name not in GENERATED_FILES or not target.resolve().is_relative_to(root):
+        raise ValueError('พาธอยู่นอกขอบเขตไฟล์รายงาน')
+    for part in [target, *target.parents]:
+        if part == root:
+            break
+        if part.is_symlink() or part.is_junction():
+            raise ValueError('ไฟล์รายงานต้องไม่ผ่านลิงก์')
+    return target
+
+
+def _existing_files(root):
+    manifest = root / '.report_files.json'
+    if manifest.exists():
+        if manifest.is_symlink():
+            raise ValueError('manifest ต้องไม่เป็นลิงก์')
+        paths = json.loads(manifest.read_text(encoding='utf-8'))
+        if not isinstance(paths, list) or not all(isinstance(p, str) for p in paths):
+            raise ValueError('manifest รายงานไม่ถูกต้อง')
+        return {str(_checked_path(root, p).relative_to(root).as_posix()) for p in paths}
+    # Adopt flat reports written before a manifest existed; leave unrelated folders intact.
+    files = {p.name for p in root.iterdir() if p.is_file() and p.name in GENERATED_FILES and not p.name.startswith('.')}
+    for folder in root.iterdir():
+        if folder.is_dir() and (folder.name == 'details' or re.fullmatch(r'portfolio|[0-9]{2}_[A-Za-z0-9_]+', folder.name)):
+            _safe_tree(folder, root)
+            files.update(p.relative_to(root).as_posix() for p in folder.rglob('*') if p.is_file())
+    for name in files:
+        _checked_path(root, name)
+    return files
+
+
 def publish_report(folder):
-    """เขียนทับรายงาน latest ชุดเดียวหลังทำครบ; ถ้าล้มเหลวคืนรายงานเดิม."""
+    """Replace files directly in the report root; restore old files if writing fails."""
     folder = Path(folder)
     root = folder.parent.resolve()
-    if folder.name != '.building_current' and not re.fullmatch(r'\.building_[0-9a-f]{32}', folder.name):
+    if folder.name != '.building_current':
         raise ValueError('เผยแพร่ได้เฉพาะโฟลเดอร์ที่ begin_report สร้าง')
     _safe_tree(folder, root)
     if not any((folder / name).is_file() for name in ('report.md', 'comparison.md')):
         raise ValueError('ยังไม่มีรายงานที่เสร็จสมบูรณ์')
-    latest = root / 'latest'
+    before = _existing_files(root)
+    sources = [p for p in folder.rglob('*') if p.is_file()]
+    expected = {p.relative_to(folder).as_posix() for p in sources}
+    for name in expected:
+        _checked_path(root, name)
     backup = root / '.previous_current'
-    if latest.exists():
-        _safe_tree(latest, root)
-        try:
-            latest.rename(backup)
-        except PermissionError:
-            # Windows อาจล็อกโฟลเดอร์ที่เปิดใน Explorer/VS Code แต่ยังอัปเดตไฟล์ข้างในได้
-            return _publish_in_place(folder, latest, backup, root)
+    if backup.exists():
+        raise ValueError('พบข้อมูลสำรองที่ยังไม่ได้ตรวจสอบ')
+    backup.mkdir()
+    for name in before:
+        source = _checked_path(root, name)
+        if source.is_file():
+            target = backup / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+    manifest = root / '.report_files.json'
+    original_manifest = manifest.read_bytes() if manifest.exists() else None
+    sources.sort(key=lambda p: (p.relative_to(folder).as_posix() in ('report.md', 'comparison.md'), str(p)))
+    changed = []
     try:
-        folder.rename(latest)
-    except OSError:
-        if backup.exists():
-            backup.rename(latest)
-        raise
+        for source in sources:
+            relative = source.relative_to(folder).as_posix()
+            _replace_file(source, _checked_path(root, relative))
+            changed.append(relative)
+        for name in before - expected:
+            target = _checked_path(root, name)
+            if target.is_file():
+                target.unlink()
+        staged_manifest = folder / '.report_files.json'
+        staged_manifest.write_text(json.dumps(sorted(expected), indent=2), encoding='utf-8')
+        _replace_file(staged_manifest, manifest)
+    except OSError as error:
+        for name in before:
+            saved = backup / name
+            if saved.is_file():
+                _replace_file(saved, _checked_path(root, name))
+        for name in set(changed) - before:
+            _checked_path(root, name).unlink(missing_ok=True)
+        if original_manifest is None:
+            manifest.unlink(missing_ok=True)
+        else:
+            manifest.write_bytes(original_manifest)
+        remove_generated(backup, root)
+        raise OSError('อัปเดตรายงานไม่สำเร็จ คืนไฟล์รายงานเดิมแล้ว') from error
     warnings = []
-    for old in root.iterdir():
-        if old.is_dir() and (old == backup or re.fullmatch(r'\d{8}_\d{6}_\d{6}', old.name)):
-            try:
-                remove_generated(old, root)
-            except (ValueError, OSError) as error:
-                warnings.append(str(error))
-    return latest, warnings
+    # Remove empty output directories only; preserve comparison reports and user files.
+    parents = {parent for name in before - expected for parent in (root / name).parents if parent != root and parent.is_relative_to(root)}
+    for parent in sorted(parents, key=lambda p: len(p.parts), reverse=True):
+        if parent.is_dir() and not any(parent.iterdir()):
+            parent.rmdir()
+    for old in [folder, backup, *[p for p in root.iterdir() if p.is_dir() and re.fullmatch(r'\d{8}_\d{6}_\d{6}', p.name)]]:
+        try:
+            remove_generated(old, root)
+        except (ValueError, OSError) as error:
+            warnings.append(str(error))
+    return root, warnings
 
 
 def _replace_file(source, target):
@@ -141,44 +204,3 @@ def _replace_file(source, target):
             temporary.unlink()
 
 
-def _publish_in_place(folder, latest, backup, root):
-    """สำรองก่อนเขียน อัปเดตหน้ารายงานเป็นไฟล์สุดท้าย คืนไฟล์เดิมเมื่อเขียนไม่สำเร็จ."""
-    _safe_tree(folder, root)
-    _safe_tree(latest, root)
-    shutil.copytree(latest, backup)
-    sources = [p for p in folder.rglob('*') if p.is_file()]
-    # หน้ารายงานหลักเป็นจุดเผยแพร่หลังไฟล์ประกอบพร้อมทั้งหมด
-    sources.sort(key=lambda p: (p.relative_to(folder).as_posix() in ('report.md', 'comparison.md'), str(p)))
-    changed = []
-    try:
-        for source in sources:
-            relative = source.relative_to(folder)
-            _replace_file(source, latest/relative)
-            changed.append(relative)
-    except OSError as error:
-        for relative in reversed(changed):
-            if (backup/relative).exists():
-                _replace_file(backup/relative, latest/relative)
-            else:
-                (latest/relative).unlink()
-        remove_generated(backup, root)
-        raise OSError('อัปเดตรายงานไม่สำเร็จ คืนไฟล์เดิมแล้ว กรุณาปิดไฟล์รายงานที่ถูกล็อกแล้วลองใหม่') from error
-    warnings = []
-    expected = {p.relative_to(folder) for p in sources}
-    # ตรวจขอบเขตอีกครั้งก่อนลบไฟล์ที่รอบใหม่ไม่ได้ใช้
-    _safe_tree(latest, root)
-    for item in sorted(latest.rglob('*'), key=lambda p: len(p.parts), reverse=True):
-        try:
-            if item.is_file() and item.relative_to(latest) not in expected:
-                item.unlink()
-            elif item.is_dir() and not any(item.iterdir()):
-                item.rmdir()
-        except OSError as error:
-            warnings.append(str(error))
-    for old in (folder, backup):
-        try:
-            remove_generated(old, root)
-        except OSError as error:
-            warnings.append(str(error))
-    os.utime(latest, None)
-    return latest, warnings
