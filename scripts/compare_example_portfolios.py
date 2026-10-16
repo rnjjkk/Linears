@@ -7,9 +7,7 @@ if __package__ in (None, ""):
 
 import argparse
 import csv
-from datetime import datetime
 import json
-from pathlib import Path
 
 from longtripletun.price_data import load_price_returns
 from longtripletun.settings import load_policy, split_days
@@ -24,20 +22,25 @@ from longtripletun.recommendation import build_recommendation, concentration_sum
 from longtripletun.project_paths import PROJECT_ROOT, EXAMPLES_DIR, REPORTS_DIR, default_price_path
 
 
+def example_portfolio_files(folder):
+    # เลือกตัวอย่าง 01–10 อย่างละหนึ่งไฟล์ และปฏิเสธชุดที่ไม่ครบ
+    files = [p for p in sorted(Path(folder).glob('[0-9][0-9]_*.csv')) if 1 <= int(p.name[:2]) <= 10]
+    if len(files) != 10 or {int(p.name[:2]) for p in files} != set(range(1, 11)):
+        raise ValueError('ต้องมีพอร์ตตัวอย่าง 01–10 อย่างละหนึ่งไฟล์ใน examples/portfolios')
+    return files
+
+
 def main():
     # วิเคราะห์พอร์ตตัวอย่างแต่ละชุดและบันทึกผลเปรียบเทียบ
     policy = load_policy()
-    base = PROJECT_ROOT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prices', type=Path, default=default_price_path())
     args = parser.parse_args()
     from longtripletun.report_store import begin_report, publish_report
     # ใช้เฉพาะตัวอย่างมาตรฐาน 01–10 จากโฟลเดอร์ portfolios
-    files = sorted((EXAMPLES_DIR / 'portfolios').glob('[0-9][0-9]_*.csv'))
-    if not files:
-        raise ValueError('ไม่พบ CSV พอร์ตตัวอย่างใน examples/portfolios')
+    files = example_portfolio_files(EXAMPLES_DIR / 'portfolios')
     output = begin_report(REPORTS_DIR / 'comparisons')
-    summary, contexts = [], []
+    summary, contexts, decisions = [], [], []
     for path in files:
         print('Analyzing:', path.name, flush=True)
         with path.open(encoding='utf-8-sig', newline='') as stream:
@@ -53,6 +56,11 @@ def main():
         decision = build_recommendation(args.prices, train, names, weights, policy=policy)
         concentration = concentration_summary(screening['tickers'], screening['weights'], screening['covariance'])
         save_recommendation(decision, concentration, args.prices, train[-1], test, output / path.stem)
+        approved = [{'level': option['level'], 'label': option['label'],
+                     'ticker': option['trial']['ticker'],
+                     'new_stock_weight_percent': option['trial']['new_stock_weight_percent']}
+                    for option in decision['approved_levels']]
+        decisions.append({'portfolio': path.stem, 'status': decision['status'], 'approved': approved})
         print('Decision:', decision['reason'], flush=True)
         costs = evaluate_costs(args.prices, train[-1], test, screening['tickers'],
                                screening['weights'], proposal['weights'], fee_rate=policy['fee_rate'])
@@ -72,16 +80,28 @@ def main():
                          'train_start': train[0], 'train_end': train[-1], 'train_days': len(train),
                          'test_start': test[0], 'test_end': test[-1], 'test_days': len(test),
                          'pca_target': policy['pca_target'], 'fee_rate': policy['fee_rate'], 'config': policy, 'best': proposal['best'],
-                         'new_weights': proposal['weight_changes'], 'assumptions': costs['assumptions']})
+                         'new_weights': proposal['weight_changes'], 'assumptions': costs['assumptions'],
+                         'recommendation_status': decision['status'], 'approved': approved,
+                         'recommendation_reason': decision['reason']})
     with (output / 'comparison.csv').open('w', encoding='utf-8-sig', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
     (output / 'contexts.json').write_text(json.dumps(contexts, ensure_ascii=False, indent=2), encoding='utf-8')
-    lines = ['# ผลสำรวจพอร์ตตัวอย่าง', '',
-             'ใช้ CSV ราคาเดิมและวิธีเดิมทุกพอร์ต เป็นการสำรวจย้อนหลัง ไม่ใช่การทดสอบกลยุทธ์ใหม่แบบไม่เคยเห็นข้อมูล ดูข้อจำกัดใน README.md', '',
-             '| Portfolio | Strategy | Status | Net return % | Daily SD % | Max drawdown % |',
-             '|---|---|---|---:|---:|---:|']
+    lines = ['# ผลสำรวจพอร์ตตัวอย่าง 01–10', '',
+             'ใช้ CSV ราคาและ config เดียวกัน คำแนะนำคัดจาก Fit/Validation ก่อนประเมิน Test', '',
+             '## ทางเลือกที่ผ่านเกณฑ์', '', '| พอร์ต | ทางเลือกที่ผ่านเกณฑ์ |', '|---|---|']
+    for result in decisions:
+        options = '; '.join(f"ระดับ {option['level']} ({option['label']}): เพิ่ม {option['ticker']} {option['new_stock_weight_percent']:g}%"
+                            for option in result['approved'])
+        if not options:
+            options = 'ไม่มี — คงสัดส่วนเดิมและไม่เสียค่าปรับพอร์ตเพิ่มในแบบจำลองนี้'
+        lines.append(f"| {result['portfolio']} | {options} |")
+    lines += ['', 'แต่ละทางเลือกเป็นคนละพอร์ต ลดหุ้นเดิมตามสัดส่วน ไม่ใช่ซื้อทุกตัวพร้อมกัน', '',
+              '## ผลวิเคราะห์ Train ทั้งช่วงเพื่อเปรียบเทียบ', '',
+              'ตารางนี้เป็นทางเลือกประกอบ ไม่ใช่คำแนะนำสุดท้าย ดูเหตุผล Validation และผล Test ของทางเลือกที่ผ่านในรายงานย่อยแต่ละพอร์ต', '',
+              '| Portfolio | Strategy | Status | Net return % | Daily SD % | Max drawdown % |',
+              '|---|---|---|---:|---:|---:|']
     for row in summary:
         fmt = lambda value: '-' if value is None else f'{value:.4f}'
         lines.append(f"| {row['portfolio']} | {row['strategy']} | {row['status']} | {fmt(row['net_total_return_percent'])} | {fmt(row['net_daily_volatility_percent'])} | {fmt(row['max_drawdown_percent'])} |")

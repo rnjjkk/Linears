@@ -51,4 +51,4 @@ py scripts/compare_example_portfolios.py
 
 ผลย้อนหลังไม่รับประกันกำไร หากไม่มีทางเลือกผ่านเกณฑ์จะคงพอร์ตเดิม ค่าธรรมเนียมเป็นแบบจำลอง ไม่รวมภาษีหรืออัตราแลกเปลี่ยน ใช้ข้อมูลราคาและ config ชุดเดียวกันเมื่อเปรียบเทียบพอร์ต
 
-[สูตรและขั้นตอนละเอียด](docs/LongTripleTun_workflow_guide.md) · [โครงสร้างโปรเจกต์](docs/PROJECT_STRUCTURE_TH.md)
+[สูตรและขั้นตอนละเอียด](docs/WORKFLOW.md) · [โครงสร้างโปรเจกต์](docs/PROJECT_STRUCTURE_TH.md)

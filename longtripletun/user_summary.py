@@ -29,6 +29,12 @@ def write_user_summary(folder, decision, concentration, levels, context):
     # ย้ายเอกสารรายละเอียดที่เพิ่งสร้างในรอบนี้ ไม่กระทบไฟล์นำเข้าหรือซอร์สโค้ด
     for item in list(folder.iterdir()):
         if item.is_file() and item.suffix in ('.csv', '.json', '.md'):
+            if item.suffix == '.md':
+                # รายงานย้ายลง details แต่รูปยังอยู่ที่รากรายงาน
+                text = item.read_text(encoding='utf-8')
+                for image in ('equity.png', 'drawdown.png', 'comparison.png'):
+                    text = text.replace(f'({image})', f'(../{image})')
+                item.write_text(text, encoding='utf-8')
             item.rename(details / item.name)
         elif item.name == 'approved_test' and item.is_dir():
             item.rename(details / item.name)
