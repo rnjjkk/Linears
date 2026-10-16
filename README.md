@@ -52,6 +52,10 @@ Linear/
     _working/                   ไฟล์ชั่วคราวขณะรันโหมด 1
 ```
 
+## ค่าตั้งร่วม
+
+ค่าการแบ่ง Train/Test, Fit/Validation, PCA, shortlist, น้ำหนักทดลอง, ค่าธรรมเนียม และเกณฑ์ผ่านทั้งหมดอยู่ใน `config/recommendation_policy.json` อ่านรายละเอียดและหน่วยใน [คู่มือ config](config/README_TH.md) ค่าใน workflow ด้านล่างเป็นค่าเริ่มต้น โปรแกรมอ่านค่าจริงจาก JSON ตอนเริ่มรันและบันทึกลงผลรายงาน
+
 ## Workflow ปัจจุบัน
 
 1. CSV พอร์ต → ตรวจน้ำหนัก → CSV ราคา → return `Close_t / Close_previous - 1` ไม่เติมราคา missing

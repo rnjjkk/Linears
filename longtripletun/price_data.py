@@ -9,10 +9,12 @@ import csv
 import math
 from datetime import date
 from pathlib import Path
+from .settings import load_policy, validate_policy
 
 
-def load_price_returns(csv_path, tickers):
+def load_price_returns(csv_path, tickers, *, policy=None):
     # อ่านราคาหุ้น ตรวจความครบถ้วน และคำนวณผลตอบแทนรายวัน
+    policy = load_policy() if policy is None else validate_policy(policy)
     csv_path = Path(csv_path)
     wanted = set(tickers)
     prices = {ticker: {} for ticker in tickers}
@@ -87,8 +89,8 @@ def load_price_returns(csv_path, tickers):
                 "price": prices[ticker][current_day], "return": daily_returns[0],
             }
 
-    if len(days) < 150:
-        raise ValueError(f"เหลือข้อมูลสมบูรณ์เพียง {len(days)} วัน ต้องมีอย่างน้อย 150 วัน")
+    if len(days) < policy['minimum_train_days']:
+        raise ValueError(f"เหลือข้อมูลสมบูรณ์เพียง {len(days)} วัน ต้องมีอย่างน้อย {policy['minimum_train_days']} วัน")
 
     audit = {
         "source": str(csv_path.resolve()), "total_rows": total_rows,
@@ -96,7 +98,8 @@ def load_price_returns(csv_path, tickers):
         "price_start": ordered_days[0], "price_end": ordered_days[-1],
         "price_days": len(ordered_days), "potential_return_days": len(ordered_days)-1,
         # กำหนดเส้นแบ่งจากปฏิทินก่อนตัด missing ไม่ให้ missing ใน test เลื่อนขอบเขต train
-        "train_boundary_80pct": ordered_days[int((len(ordered_days)-1) * 0.8)],
+        "train_boundary": ordered_days[int((len(ordered_days)-1) * policy['train_fraction'])],
+        "config": policy,
         "return_days": len(days), "invalid_selected_prices": invalid_prices,
         "missing_selected_price_cells": sum(
             prices[ticker].get(day) is None for ticker in tickers for day in ordered_days),

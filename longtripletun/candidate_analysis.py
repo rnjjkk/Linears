@@ -10,15 +10,19 @@ import math
 from datetime import date
 from pathlib import Path
 import numpy as np
+from .settings import load_policy, validate_policy
 
 
 def screen_candidates(csv_path, train_days, portfolio_tickers, portfolio_weights,
-                      pca_target=0.8, shortlist_size=10):
+                      pca_target=None, shortlist_size=None, *, policy=None):
     # สร้าง PCA จากช่วงฝึกแล้วคัดหุ้นที่มีรูปแบบต่างจากพอร์ต
+    policy = load_policy() if policy is None else validate_policy(policy)
+    pca_target = policy['pca_target'] if pca_target is None else pca_target
+    shortlist_size = policy['shortlist_size'] if shortlist_size is None else shortlist_size
     if not 0 < pca_target <= 1 or shortlist_size < 1:
         raise ValueError("PCA target ต้องอยู่ใน (0,1] และ shortlist ต้องไม่น้อยกว่า 1")
-    if len(train_days) < 150 or train_days != sorted(set(train_days)):
-        raise ValueError("วัน Train ต้องเรียง ไม่ซ้ำ และมีอย่างน้อย 150 วัน")
+    if len(train_days) < policy['minimum_fit_days'] or train_days != sorted(set(train_days)):
+        raise ValueError(f"วันฝึกต้องเรียง ไม่ซ้ำ และมีอย่างน้อย {policy['minimum_fit_days']} วัน")
     if len(portfolio_tickers) != len(portfolio_weights) or len(set(portfolio_tickers)) != len(portfolio_tickers):
         raise ValueError("รายชื่อหุ้นและน้ำหนักจับคู่ไม่ถูกต้อง")
     if not all(math.isfinite(w) and w > 0 for w in portfolio_weights) or not math.isclose(sum(portfolio_weights), 1, abs_tol=1e-8):

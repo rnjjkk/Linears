@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 from longtripletun.price_data import load_price_returns
+from longtripletun.settings import load_policy, split_days
 from longtripletun.candidate_analysis import screen_candidates
 from longtripletun.rebalance import try_rebalancing
 from longtripletun.holdout import evaluate_costs
@@ -25,6 +26,7 @@ from longtripletun.project_paths import PROJECT_ROOT, EXAMPLES_DIR, REPORTS_DIR,
 
 def main():
     # วิเคราะห์พอร์ตตัวอย่างแต่ละชุดและบันทึกผลเปรียบเทียบ
+    policy = load_policy()
     base = PROJECT_ROOT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prices', type=Path, default=default_price_path())
@@ -39,19 +41,18 @@ def main():
             holdings = list(csv.DictReader(stream))
         names = [row['ticker'].strip().upper() for row in holdings]
         weights = [float(row['weight_percent']) / 100 for row in holdings]
-        days, _, audit = load_price_returns(args.prices, names)
-        train = [day for day in days if day <= audit['train_boundary_80pct']]
-        test = [day for day in days if day > audit['train_boundary_80pct']]
-        screening = screen_candidates(args.prices, train, names, weights, pca_target=0.95)
-        proposal = try_rebalancing(screening)
-        levels = evaluate_risk_levels(args.prices, train[-1], test, screening, proposal)
+        days, _, audit = load_price_returns(args.prices, names, policy=policy)
+        train, test = split_days(days, audit['train_boundary'], policy)
+        screening = screen_candidates(args.prices, train, names, weights, policy=policy)
+        proposal = try_rebalancing(screening, policy=policy)
+        levels = evaluate_risk_levels(args.prices, train[-1], test, screening, proposal, fee_rate=policy['fee_rate'])
         save_comparison(levels, output / path.stem)
-        decision = build_recommendation(args.prices, train, names, weights)
+        decision = build_recommendation(args.prices, train, names, weights, policy=policy)
         concentration = concentration_summary(screening['tickers'], screening['weights'], screening['covariance'])
         save_recommendation(decision, concentration, args.prices, train[-1], test, output / path.stem)
         print('Decision:', decision['reason'], flush=True)
         costs = evaluate_costs(args.prices, train[-1], test, screening['tickers'],
-                               screening['weights'], proposal['weights'], fee_rate=0.001)
+                               screening['weights'], proposal['weights'], fee_rate=policy['fee_rate'])
         original = next(row for row in costs['summary'] if row['strategy'] == 'original')
         for row in costs['summary']:
             result = {'portfolio': path.stem, **row, 'max_drawdown_percent': None,
@@ -67,7 +68,7 @@ def main():
         contexts.append({'portfolio': path.stem, 'input': holdings, 'price_source': str(args.prices.resolve()),
                          'train_start': train[0], 'train_end': train[-1], 'train_days': len(train),
                          'test_start': test[0], 'test_end': test[-1], 'test_days': len(test),
-                         'pca_target': 0.95, 'fee_rate': 0.001, 'best': proposal['best'],
+                         'pca_target': policy['pca_target'], 'fee_rate': policy['fee_rate'], 'config': policy, 'best': proposal['best'],
                          'new_weights': proposal['weight_changes'], 'assumptions': costs['assumptions']})
     with (output / 'comparison.csv').open('w', encoding='utf-8-sig', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=list(summary[0]))

@@ -4,35 +4,13 @@ import csv
 import json
 import math
 from pathlib import Path
-from .project_paths import CONFIG_DIR
+from .settings import load_policy, validate_policy
 
 import numpy as np
 
 from .candidate_analysis import screen_candidates
 from .rebalance import try_rebalancing
 from .risk_levels import evaluate_risk_levels, select_risk_levels, save_comparison
-
-
-def load_policy(path=None):
-    # อ่านและตรวจค่ากฎสำหรับตัดสินใจปรับพอร์ต
-    path = Path(path) if path else CONFIG_DIR / 'recommendation_policy.json'
-    policy = json.loads(path.read_text(encoding='utf-8-sig'))
-    for name in ('fit_fraction_of_train', 'minimum_fit_days', 'minimum_validation_days',
-                 'minimum_sd_reduction_percent', 'maximum_return_loss_pp',
-                 'maximum_drawdown_worsening_pp'):
-        value = policy.get(name)
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
-            raise ValueError(f'ค่า policy ไม่ถูกต้อง: {name}')
-    if not 0 < policy['fit_fraction_of_train'] < 1:
-        raise ValueError('fit_fraction_of_train ต้องอยู่ระหว่าง 0 และ 1')
-    for name, minimum in [('minimum_fit_days', 150), ('minimum_validation_days', 2)]:
-        if policy[name] < minimum or int(policy[name]) != policy[name]:
-            raise ValueError(f'{name} ต้องเป็นจำนวนเต็มอย่างน้อย {minimum}')
-    if not 0 <= policy['minimum_sd_reduction_percent'] <= 100:
-        raise ValueError('minimum_sd_reduction_percent ต้องอยู่ระหว่าง 0 และ 100')
-    if min(policy['maximum_return_loss_pp'], policy['maximum_drawdown_worsening_pp']) < 0:
-        raise ValueError('ค่าความสูญเสียที่ยอมรับต้องไม่ติดลบ')
-    return policy
 
 
 def concentration_summary(names, weights, covariance):
@@ -92,11 +70,15 @@ def assess_candidate(original, candidate, policy):
             'drawdown_change_pp': drawdown_delta}
 
 
-def build_recommendation(price_path, train_days, names, weights, *, pca_target=0.95,
-                         fee_rate=0.001, policy=None):
+def build_recommendation(price_path, train_days, names, weights, *, pca_target=None,
+                         fee_rate=None, policy=None):
     # เลือกพอร์ตจาก Fit แล้วตรวจ Validation ก่อนให้คำแนะนำ
     """ไม่มี argument Test; shortlist, PCA และระดับสร้างจาก Fit ก่อน Validation เท่านั้น."""
-    policy = load_policy() if policy is None else dict(policy)
+    policy = load_policy() if policy is None else validate_policy(policy)
+    policy = validate_policy({**policy,
+                              'pca_target': policy['pca_target'] if pca_target is None else pca_target,
+                              'fee_rate': policy['fee_rate'] if fee_rate is None else fee_rate})
+    pca_target, fee_rate = policy['pca_target'], policy['fee_rate']
     if train_days != sorted(set(train_days)):
         raise ValueError('Train ต้องเรียงวันและไม่ซ้ำ')
     split = int(len(train_days)*policy['fit_fraction_of_train'])
@@ -109,8 +91,9 @@ def build_recommendation(price_path, train_days, names, weights, *, pca_target=0
         decision['reason'] = 'ข้อมูล Fit/Validation ไม่พอ จึงคงพอร์ตเดิมและยังยืนยันความคุ้มค่าไม่ได้'
         return decision
     try:
-        screening = screen_candidates(price_path, fit, names, weights, pca_target=pca_target)
-        rebalance = try_rebalancing(screening)
+        screening = screen_candidates(price_path, fit, names, weights, pca_target=pca_target,
+                                      shortlist_size=policy['shortlist_size'], policy=policy)
+        rebalance = try_rebalancing(screening, policy=policy)
         candidates = select_risk_levels(screening, rebalance)
         evaluated = evaluate_risk_levels(price_path, fit[-1], validation, screening, rebalance,
                                          fee_rate=fee_rate, levels=candidates)

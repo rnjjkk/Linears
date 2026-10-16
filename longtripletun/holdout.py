@@ -6,6 +6,7 @@ import math
 from datetime import date
 from pathlib import Path
 import numpy as np
+from .settings import load_policy
 
 
 def buy_and_hold(prices, weights):
@@ -117,7 +118,7 @@ def evaluate_holdout(csv_path, anchor_day, test_days, names, original_weights, p
 
 
 def evaluate_costs(csv_path, anchor_day, test_days, names, original_weights, proposed_weights,
-                   fee_rate=0.001):
+                   fee_rate=None):
     # ประเมินผลพอร์ตช่วงทดสอบหลังหักค่าธรรมเนียมเริ่มต้น
     """เปรียบเทียบสามพอร์ตด้วยต้นทุนประมาณการครั้งแรกจากน้ำหนักเป้าหมาย
 
@@ -125,6 +126,8 @@ fee_fraction = rate * sum(abs(target_weight - original_weight))
 คิดทั้งฝั่งซื้อและขาย ไม่หารสอง หักจากเงินลงทุนก่อนเริ่มถือ ไม่คิดซ้ำรายวัน
 เป็นแบบจำลองต้นทุนโดยประมาณ: ไม่แก้ย้อนหาปริมาณเทรดหลังหักค่าธรรมเนียม
 """
+    if fee_rate is None:
+        fee_rate = load_policy()['fee_rate']
     if not math.isfinite(fee_rate) or not 0 <= fee_rate <= 0.01:
         raise ValueError("fee_rate ต้องอยู่ระหว่าง 0 และ 0.01 (0% ถึง 1% ต่อฝั่ง)")
     gross = evaluate_holdout(csv_path, anchor_day, test_days, names, original_weights,

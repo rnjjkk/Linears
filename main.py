@@ -5,6 +5,7 @@ import csv
 import json
 from longtripletun.price_data import load_price_returns
 import math
+from longtripletun.settings import load_policy, split_days
 from pathlib import Path
 import sys
 from longtripletun.project_paths import (PROJECT_ROOT, EXAMPLES_DIR, REPORTS_DIR, default_price_path, resolve_portfolio)
@@ -14,6 +15,9 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 try:
+    policy = load_policy()
+    pca_target = policy['pca_target']
+    fee_rate = policy['fee_rate']
     # 1. รับชื่อไฟล์หรือพาธจากผู้ใช้
     filename = input("กรอกชื่อไฟล์ CSV [Enter = examples/portfolio.csv]: ").strip().strip('"')
     if filename == "":
@@ -99,7 +103,7 @@ try:
         if not price_path.is_absolute():
             price_path = base_path / price_path
 
-        days, returns_matrix, price_audit = load_price_returns(price_path, tickers)
+        days, returns_matrix, price_audit = load_price_returns(price_path, tickers, policy=policy)
         data_label = "ข้อมูลราคาจริงจาก CSV (ผลตอบแทนย้อนหลัง)"
         print(f"\nCSV มี {price_audit['total_rows']:,} แถว จาก {price_audit['total_stocks']} หุ้น")
         print(f"ช่วงราคา: {price_audit['price_start']} ถึง {price_audit['price_end']}")
@@ -201,21 +205,20 @@ try:
     test_returns_matrix = []
 
     if data_mode == "1":
-        # นับวันที่ใช้ได้ซึ่งอยู่ก่อน/ตรงเส้นแบ่ง 80% ของปฏิทินข้อมูลเดิม
-        # หากไม่มี missing จะเท่ากับ int(len(all_days) * 0.8)
-        train_boundary = price_audit["train_boundary_80pct"]
+        # ใช้เส้นแบ่งปฏิทินตาม config ก่อนกรองวันขาดหาย
+        # จึงไม่ให้ข้อมูลขาดใน Test เลื่อนเส้นแบ่ง Train
+        train_boundary = price_audit["train_boundary"]
+        split_days(all_days, train_boundary, policy)
         split_index = sum(day <= train_boundary for day in all_days)
         train_days = all_days[:split_index]
         train_returns_matrix = all_returns_matrix[:split_index]
         test_days = all_days[split_index:]
         test_returns_matrix = all_returns_matrix[split_index:]
 
-        if len(train_days) < 150 or len(test_days) < 50:
-            raise ValueError("หลังแบ่งข้อมูล ต้องมี Train อย่างน้อย 150 วัน และ Test อย่างน้อย 50 วัน")
         if train_days[-1] >= test_days[0]:
             raise ValueError("วันที่ Train และ Test เรียงไม่ถูกต้อง")
 
-        print("\n--- แบ่งข้อมูลตามเวลา: Train 80% / Test 20% ---")
+        print(f"\n--- แบ่งข้อมูลตามเวลา: Train {policy['train_fraction']*100:g}% / Test {(1-policy['train_fraction'])*100:g}% ---")
         print(f"Train: {len(train_days):,} วัน | {train_days[0]} ถึง {train_days[-1]}")
         print(f"Test : {len(test_days):,} วัน | {test_days[0]} ถึง {test_days[-1]}")
         print("ข้อมูลที่ใช้คำนวณจากบรรทัดนี้เป็นต้นไป: Train เท่านั้น")
@@ -226,7 +229,7 @@ try:
         returns_matrix = train_returns_matrix
         data_label = "ข้อมูลราคาจริง: เฉพาะช่วง Train"
         split_summary = {
-            "source": str(price_path.resolve()), "policy": "Chronological 80/20 before missing-date filtering",
+            "source": str(price_path.resolve()), "policy": "Chronological split before missing-date filtering", "config": policy,
             "calendar_boundary": train_boundary, "tickers": tickers,
             "train_days": len(train_days), "train_start": train_days[0], "train_end": train_days[-1],
             "test_days": len(test_days), "test_start": test_days[0], "test_end": test_days[-1],
@@ -440,10 +443,10 @@ try:
     if total_variance <= 0 or all(sd == 0 for sd in standard_deviations):
         print("ข้อมูลไม่มีความแปรปรวน จึงไม่คำนวณสัดส่วนความแปรปรวนของ PCA")
     else:
-        # 22. เลือกจำนวนแกนขั้นต่ำที่อธิบายความแปรปรวนสะสมอย่างน้อย 80%
+        # 22. เลือกจำนวนแกนขั้นต่ำตามสัดส่วนความแปรปรวนที่กำหนดใน config
         explained_ratios = eigenvalues / total_variance
         cumulative_ratios = np.cumsum(explained_ratios)
-        pca_target = 0.95
+        pca_target = policy['pca_target']
         number_of_components = min(len(tickers), int(np.searchsorted(cumulative_ratios, pca_target)) + 1)
         for column in range(len(tickers)):
             print(f"PC{column + 1}: Eigenvalue = {eigenvalues[column]:.9f}, "
@@ -513,7 +516,7 @@ try:
 
         print("\n--- ขั้น 27: ตรวจข้อมูล Train ของหุ้นผู้สมัครจาก CSV ---")
         screening = screen_candidates(price_path, train_days, tickers, weights,
-                                      pca_target=pca_target, shortlist_size=10)
+                                      pca_target=pca_target, shortlist_size=policy['shortlist_size'], policy=policy)
         print(f"หุ้นที่พบในช่วง Train: {screening['stocks_seen_in_train']} ตัว")
         print(f"หุ้นที่ผ่าน: {len(screening['tickers'])} ตัว (รวมหุ้นเดิม {len(tickers)} ตัว)")
         print(f"หุ้นที่ตัดออก: {len(screening['excluded'])} ตัว; รายละเอียดใน candidate_exclusions.csv")
@@ -524,7 +527,7 @@ try:
         print(f"ใช้ {screening['components']} แกน อธิบายความแปรปรวน {screening['explained_variance']:.2%}")
         print("ผลนี้ต่างจาก PCA ของหุ้นเดิม 3 ตัว เพราะมีหุ้นและโครงสร้าง covariance เพิ่มขึ้น")
 
-        print("\n--- ขั้น 29: หุ้นผู้สมัคร 10 อันดับแรกตาม PCA cosine ต่ำสุด ---")
+        print(f"\n--- ขั้น 29: หุ้นผู้สมัครสูงสุด {policy['shortlist_size']} ตัวตาม PCA cosine ต่ำสุด ---")
         print(f"{'Ticker':>12}{'PCA cosine':>15}{'Full corr.':>15}{'Daily SD (%)':>16}")
         for item in screening['candidates']:
             if not item['shortlisted']:
@@ -555,13 +558,13 @@ try:
         concentration = concentration_summary(screening['tickers'], screening['weights'], screening['covariance'])
         print("\nกำลังตรวจความคุ้มค่าด้วย Fit/Validation ภายใน Train; ไม่ใช้ Test เลือกคำแนะนำ")
         recommendation = build_recommendation(price_path, train_days, tickers, weights,
-                                               pca_target=pca_target, fee_rate=0.001)
+                                               pca_target=pca_target, fee_rate=fee_rate, policy=policy)
         print("ผลด่านความคุ้มค่า:", recommendation['reason'])
         print("ตารางขั้น 30–43 ต่อไปเป็นการวิเคราะห์เดิม; คำแนะนำที่ผ่านเกณฑ์จะสรุปอีกครั้งท้ายโปรแกรม")
 
-        # 30. ทดลองทุกคู่ของหุ้นผู้สมัครกับสัดส่วน 5%, 10%, 15%, 20%
+        # 30. ทดลองหุ้นผู้สมัครกับสัดส่วนที่กำหนดใน config
         from longtripletun.rebalance import try_rebalancing
-        rebalancing = try_rebalancing(screening)
+        rebalancing = try_rebalancing(screening, policy=policy)
         print(f"\n--- ขั้น 30: ทดลองปรับพอร์ตทั้งหมด {len(rebalancing['trials'])} ทางเลือก ---")
         print("ใช้ Covariance เต็มของ Train; ไม่ใช้ covariance ที่ลดมิติด้วย PCA")
         print(f"{'Ticker':>12}{'New weight (%)':>18}{'Daily SD (%)':>18}{'Reduction (pp)':>18}")
@@ -654,7 +657,7 @@ try:
 
         # 36. เพิ่ม baseline: แบ่งเท่ากันเฉพาะหุ้นเดิม และคิดค่าธรรมเนียมตั้งต้น
         from longtripletun.holdout import evaluate_costs
-        fee_rate = 0.001  # ค่าธรรมเนียมสมมติ 0.1% ต่อมูลค่าซื้อหรือขาย ไม่ใช่อัตราของโบรกเกอร์จริง
+        fee_rate = policy['fee_rate']  # อัตราสมมติจาก config
         cost_result = evaluate_costs(price_path, train_days[-1], test_days,
                                     screening['tickers'], screening['weights'], rebalancing['weights'],
                                     fee_rate=fee_rate)
@@ -701,7 +704,7 @@ try:
                                    for ticker, weight in zip(tickers, weights)],
             'source': str(price_path.resolve()), 'train_start': train_days[0], 'train_end': train_days[-1],
             'train_days': len(train_days), 'test_start': test_days[0], 'test_end': test_days[-1],
-            'test_days': len(test_days), 'fee_rate': fee_rate, 'pca_target': pca_target,
+            'test_days': len(test_days), 'fee_rate': fee_rate, 'pca_target': pca_target, 'config': policy,
         }
         report_folder, report_metrics = save_report(cost_result, rebalancing, screening,
                                                     report_context, REPORTS_DIR)

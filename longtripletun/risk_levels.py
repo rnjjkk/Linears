@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+from .settings import load_policy
 
 from .holdout import evaluate_costs
 from .report_charts import calculate_drawdown
@@ -88,8 +89,10 @@ def compare_metrics(original, new, capital=100000.0):
 
 
 def evaluate_risk_levels(price_path, anchor_day, test_days, screening, rebalancing,
-                         fee_rate=0.001, capital=100000.0, *, levels=None):
+                         fee_rate=None, capital=100000.0, *, levels=None):
     # ประเมินแต่ละระดับพอร์ตในช่วงทดสอบด้วยวิธีเดียวกัน
+    if fee_rate is None:
+        fee_rate = load_policy()['fee_rate']
     levels = select_risk_levels(screening, rebalancing) if levels is None else levels
     rows, weights = [], []
     # แม้ไม่มีระดับที่ผ่านเกณฑ์ ยังแสดงพอร์ตเดิมและ Equal Weight

@@ -3,10 +3,14 @@
 
 import math
 import numpy as np
+from .settings import load_policy
 
 
-def try_rebalancing(screening, additions=(0.05, 0.10, 0.15, 0.20)):
+def try_rebalancing(screening, additions=None, *, policy=None):
     # ทดลองน้ำหนักหุ้นใหม่และเลือกทางเลือกที่ลดความแปรปรวน
+    if additions is None:
+        policy = load_policy() if policy is None else policy
+        additions = policy['candidate_weights']
     names = screening['tickers']
     old_weights = np.asarray(screening['weights'], dtype=float)
     covariance = np.asarray(screening['covariance'], dtype=float)

@@ -1,4 +1,16 @@
 {
+  "train_fraction": 0.8,
+  "minimum_train_days": 150,
+  "minimum_test_days": 50,
+  "pca_target": 0.95,
+  "shortlist_size": 10,
+  "candidate_weights": [
+    0.05,
+    0.1,
+    0.15,
+    0.2
+  ],
+  "fee_rate": 0.001,
   "fit_fraction_of_train": 0.75,
   "minimum_fit_days": 150,
   "minimum_validation_days": 60,
