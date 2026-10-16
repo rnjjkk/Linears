@@ -1,3 +1,4 @@
+# วิเคราะห์พอร์ตตัวอย่างทั้งหมดและสรุปผลเปรียบเทียบ
 """สำรวจทุกพอร์ตที่กำหนดไว้ด้วยฟังก์ชันเดิม ไม่ปรับสูตรเพื่อให้ผลชนะ."""
 import sys
 from pathlib import Path
@@ -23,6 +24,7 @@ from longtripletun.project_paths import PROJECT_ROOT, EXAMPLES_DIR, REPORTS_DIR,
 
 
 def main():
+    # วิเคราะห์พอร์ตตัวอย่างแต่ละชุดและบันทึกผลเปรียบเทียบ
     base = PROJECT_ROOT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prices', type=Path, default=default_price_path())

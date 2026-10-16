@@ -1,3 +1,4 @@
+# อ่านราคาหุ้น ตรวจข้อมูล และแปลงเป็นเมทริกซ์ผลตอบแทน
 """อ่าน CSV ที่ stockdata.py สร้าง โดยไม่เรียกดาวน์โหลดซ้ำ
 
 รับราคา long format: Date,Ticker,Open,High,Low,Close,Volume
@@ -11,6 +12,7 @@ from pathlib import Path
 
 
 def load_price_returns(csv_path, tickers):
+    # อ่านราคาหุ้น ตรวจความครบถ้วน และคำนวณผลตอบแทนรายวัน
     csv_path = Path(csv_path)
     wanted = set(tickers)
     prices = {ticker: {} for ticker in tickers}

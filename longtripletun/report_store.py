@@ -1,3 +1,4 @@
+# เขียนทับรายงานชุดเดิมอย่างปลอดภัยและจัดการไฟล์ชั่วคราว
 """เผยแพร่รายงานล่าสุดหลังเขียนครบ ลบเฉพาะไฟล์ผลลัพธ์ที่รู้จักในรากรายงาน."""
 from pathlib import Path
 import re
@@ -27,6 +28,7 @@ LOOSE_OUTPUTS = {
 
 
 def stage_loose_outputs(base, draft, protected=()):
+    # คัดลอกผลคำนวณชั่วคราวเข้าโฟลเดอร์รายละเอียดรายงาน
     base, draft = Path(base).resolve(), Path(draft)
     protected = {Path(path).resolve() for path in protected}
     details = draft/'details'
@@ -42,6 +44,7 @@ def stage_loose_outputs(base, draft, protected=()):
 
 
 def remove_loose_outputs(base, saved):
+    # ลบไฟล์ชั่วคราวที่บันทึกแล้วโดยไม่แตะไฟล์นำเข้า
     base = Path(base).resolve()
     for name, content in saved.items():
         if name not in LOOSE_OUTPUTS:
@@ -52,6 +55,7 @@ def remove_loose_outputs(base, saved):
 
 
 def _safe_tree(folder, root):
+    # ตรวจว่าต้นไม้โฟลเดอร์อยู่ในขอบเขตและมีเฉพาะไฟล์ผลลัพธ์
     """ตรวจทั้งต้นไม้ก่อนลบ/ย้าย: ไม่ตาม symlink/junction ไม่แตะไฟล์ที่ไม่รู้จัก."""
     root = Path(root).resolve()
     folder = Path(folder)
@@ -66,6 +70,7 @@ def _safe_tree(folder, root):
 
 
 def remove_generated(folder, root):
+    # ลบโฟลเดอร์ผลลัพธ์ที่ผ่านการตรวจขอบเขตแล้ว
     folder = _safe_tree(folder, root)
     for item in sorted(folder.rglob('*'), key=lambda p: len(p.parts), reverse=True):
         if item.is_file():
@@ -76,6 +81,7 @@ def remove_generated(folder, root):
 
 
 def begin_report(root):
+    # เตรียมพื้นที่ชั่วคราวโดยเก็บรายงานที่เสร็จแล้วไว้
     """Build in a reusable temporary folder without changing the completed report."""
     root = Path(root)
     if root.is_symlink() or root.is_junction():
@@ -92,6 +98,7 @@ def begin_report(root):
 
 
 def _checked_path(root, relative):
+    # ตรวจว่าพาธไฟล์รายงานปลอดภัยและอยู่ในโฟลเดอร์ที่กำหนด
     path = Path(relative)
     if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0].startswith('.'):
         raise ValueError('พาธไฟล์รายงานไม่ถูกต้อง')
@@ -107,6 +114,7 @@ def _checked_path(root, relative):
 
 
 def _existing_files(root):
+    # อ่านรายการไฟล์ผลลัพธ์ที่รายงานเดิมใช้อยู่
     manifest = root / '.report_files.json'
     if manifest.exists():
         if manifest.is_symlink():
@@ -127,6 +135,7 @@ def _existing_files(root):
 
 
 def publish_report(folder):
+    # เขียนทับผลรายงานและคืนไฟล์เดิมหากบันทึกไม่สำเร็จ
     """Replace files directly in the report root; restore old files if writing fails."""
     folder = Path(folder)
     root = folder.parent.resolve()
@@ -194,6 +203,7 @@ def publish_report(folder):
 
 
 def _replace_file(source, target):
+    # แทนที่ไฟล์ปลายทางผ่านไฟล์ชั่วคราว
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name('.update_' + uuid.uuid4().hex)
     try:

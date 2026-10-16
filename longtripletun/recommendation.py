@@ -1,3 +1,4 @@
+# ตรวจความกระจุกตัวและคัดคำแนะนำที่ผ่านเกณฑ์ Validation
 """ด่านความคุ้มค่าจาก Validation ก่อน Test; ค่าเริ่มต้นเป็นนโยบายทดลองของโครงงาน."""
 import csv
 import json
@@ -13,6 +14,7 @@ from .risk_levels import evaluate_risk_levels, select_risk_levels, save_comparis
 
 
 def load_policy(path=None):
+    # อ่านและตรวจค่ากฎสำหรับตัดสินใจปรับพอร์ต
     path = Path(path) if path else CONFIG_DIR / 'recommendation_policy.json'
     policy = json.loads(path.read_text(encoding='utf-8-sig'))
     for name in ('fit_fraction_of_train', 'minimum_fit_days', 'minimum_validation_days',
@@ -34,6 +36,7 @@ def load_policy(path=None):
 
 
 def concentration_summary(names, weights, covariance):
+    # สรุปความกระจุกตัวของน้ำหนักและความสัมพันธ์ระหว่างหุ้น
     """HHI วัดน้ำหนักเท่านั้น; pair correlation ใช้ผลตอบแทนก่อน Test."""
     w, c = np.asarray(weights, float), np.asarray(covariance, float)
     if (w.shape != (len(names),) or c.shape != (len(names), len(names))
@@ -63,6 +66,7 @@ def concentration_summary(names, weights, covariance):
 
 
 def assess_candidate(original, candidate, policy):
+    # ตรวจว่าทางเลือกผ่านเกณฑ์ความเสี่ยงและผลตอบแทนหรือไม่
     required = ('net_total_return_percent', 'net_daily_volatility_percent', 'max_drawdown_percent')
     if (original.get('status') != 'ok' or candidate.get('status') != 'ok'
             or any(not isinstance(row.get(key), (float, int)) or not math.isfinite(row[key])
@@ -90,6 +94,7 @@ def assess_candidate(original, candidate, policy):
 
 def build_recommendation(price_path, train_days, names, weights, *, pca_target=0.95,
                          fee_rate=0.001, policy=None):
+    # เลือกพอร์ตจาก Fit แล้วตรวจ Validation ก่อนให้คำแนะนำ
     """ไม่มี argument Test; shortlist, PCA และระดับสร้างจาก Fit ก่อน Validation เท่านั้น."""
     policy = load_policy() if policy is None else dict(policy)
     if train_days != sorted(set(train_days)):
@@ -128,6 +133,7 @@ def build_recommendation(price_path, train_days, names, weights, *, pca_target=0
 
 
 def save_recommendation(decision, concentration, price_path, anchor_day, test_days, folder):
+    # บันทึกเหตุผลคำแนะนำและน้ำหนักพอร์ตที่ผ่านเกณฑ์
     """ผล Test แสดงหลังล็อก decision แล้ว ไม่มีการกลับไปเปลี่ยนสถานะผ่านเกณฑ์."""
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)

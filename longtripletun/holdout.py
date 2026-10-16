@@ -1,3 +1,4 @@
+# จำลองการถือพอร์ตในช่วงทดสอบและคิดค่าธรรมเนียม
 """ประเมินพอร์ตที่เลือกจาก Train แล้ว โดยไม่ปรับคำแนะนำจากผล Test"""
 
 import csv
@@ -8,6 +9,7 @@ import numpy as np
 
 
 def buy_and_hold(prices, weights):
+    # คำนวณมูลค่าพอร์ตเมื่อซื้อครั้งแรกแล้วถือโดยไม่ปรับน้ำหนัก
     """แถวแรกคือราคาตั้งต้น; NAV เริ่ม 100, ถือสัดส่วนตั้งต้นแล้วปล่อยน้ำหนักลอย.
 
 ใช้ราคาปรับแล้วเป็นดัชนีการเติบโต จึงไม่อ้างว่าเป็นจำนวนหุ้นจริงหลัง corporate actions
@@ -36,6 +38,7 @@ def buy_and_hold(prices, weights):
 
 def evaluate_holdout(csv_path, anchor_day, test_days, names, original_weights, proposed_weights,
                      include_equal_weight=False):
+    # เปรียบเทียบพอร์ตในช่วงทดสอบโดยยังไม่คิดค่าธรรมเนียม
     if (len(test_days) < 2 or test_days != sorted(set(test_days))
             or anchor_day >= test_days[0]):
         raise ValueError("วันตั้งต้นและวัน Test เรียงไม่ถูกต้อง")
@@ -115,6 +118,7 @@ def evaluate_holdout(csv_path, anchor_day, test_days, names, original_weights, p
 
 def evaluate_costs(csv_path, anchor_day, test_days, names, original_weights, proposed_weights,
                    fee_rate=0.001):
+    # ประเมินผลพอร์ตช่วงทดสอบหลังหักค่าธรรมเนียมเริ่มต้น
     """เปรียบเทียบสามพอร์ตด้วยต้นทุนประมาณการครั้งแรกจากน้ำหนักเป้าหมาย
 
 fee_fraction = rate * sum(abs(target_weight - original_weight))

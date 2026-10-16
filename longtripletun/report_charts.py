@@ -1,3 +1,4 @@
+# สร้างกราฟและรายงานจากผลทดสอบพอร์ต
 """ขั้น 38–40: Drawdown, กราฟ PNG และรายงาน Markdown จากผล Test หลังต้นทุน"""
 
 import csv
@@ -10,6 +11,7 @@ import numpy as np
 
 
 def calculate_drawdown(nav):
+    # คำนวณการลดลงจากยอดสูงสุดและหาค่าลดลงมากที่สุด
     """เทียบแต่ละวันกับ NAV สูงที่สุดที่เคยเกิดขึ้นถึงวันนั้น รวมจุดตั้งต้นก่อน fee"""
     nav = np.asarray(nav, dtype=float)
     if nav.ndim != 1 or len(nav) == 0 or not np.isfinite(nav).all() or (nav <= 0).any():
@@ -20,8 +22,8 @@ def calculate_drawdown(nav):
 
 
 def save_report(cost_result, rebalancing, screening, context, output_root):
+    # สร้างกราฟและไฟล์รายงานจากผลวิเคราะห์พอร์ต
     context['generated_at'] = datetime.now(timezone(timedelta(hours=7))).isoformat(timespec='seconds')
-    # กราฟใช้ข้อความอังกฤษเพื่อไม่ขึ้นกับฟอนต์ไทยที่ติดตั้งในแต่ละเครื่อง
     os.environ.setdefault('MPLCONFIGDIR', str(PROJECT_ROOT / '.mplconfig'))
     import matplotlib
     matplotlib.use('Agg')

@@ -1,3 +1,4 @@
+# จัดระดับทางเลือกพอร์ตและเปรียบเทียบผลตอบแทนกับความเสี่ยง
 """ทางเลือกความผันผวน 1–3 ระดับ เลือกด้วย Train และอธิบายผล Test เทียบพอร์ตเดิม."""
 import csv
 import math
@@ -10,6 +11,7 @@ from .report_charts import calculate_drawdown
 
 
 def select_risk_levels(screening, rebalancing):
+    # เลือกทางเลือกความผันผวนต่ำ กลาง และสูงจากช่วงฝึก
     """เลือกดีที่สุดต่อสัดส่วนก่อน แล้วเก็บ SD ต่ำสุด ใกล้กึ่งกลาง และสูงสุด.
 
     เก็บเฉพาะทางเลือกที่ลด variance Train ได้จริง ไม่จัดอันดับใหม่ด้วย Test.
@@ -41,6 +43,7 @@ def select_risk_levels(screening, rebalancing):
 
 
 def describe_return_change(old, new):
+    # อธิบายว่าผลตอบแทนเพิ่มหรือลดลงเมื่อเทียบพอร์ตเดิม
     """ผลตอบแทนเป็นหน่วย %; ไม่เรียกผลขาดทุนว่าเป็นกำไร และไม่หารศูนย์."""
     if abs(new - old) < 1e-10:
         return 'ผลตอบแทนสะสมเท่าเดิม'
@@ -56,6 +59,7 @@ def describe_return_change(old, new):
 
 
 def compare_metrics(original, new, capital=100000.0):
+    # เปรียบเทียบผลตอบแทน ความผันผวน และมูลค่าเงินของสองพอร์ต
     if not math.isfinite(capital) or capital <= 0:
         raise ValueError('เงินตัวอย่างต้องเป็นจำนวนบวกที่มีค่าจำกัด')
     if original['status'] != 'ok' or new['status'] != 'ok':
@@ -85,6 +89,7 @@ def compare_metrics(original, new, capital=100000.0):
 
 def evaluate_risk_levels(price_path, anchor_day, test_days, screening, rebalancing,
                          fee_rate=0.001, capital=100000.0, *, levels=None):
+    # ประเมินแต่ละระดับพอร์ตในช่วงทดสอบด้วยวิธีเดียวกัน
     levels = select_risk_levels(screening, rebalancing) if levels is None else levels
     rows, weights = [], []
     # แม้ไม่มีระดับที่ผ่านเกณฑ์ ยังแสดงพอร์ตเดิมและ Equal Weight
@@ -123,6 +128,7 @@ def evaluate_risk_levels(price_path, anchor_day, test_days, screening, rebalanci
 
 
 def render_comparison(result):
+    # จัดผลเปรียบเทียบพอร์ตเป็นข้อความและตาราง Markdown
     fmt = lambda v, digits=2: 'N/A' if v is None else f'{v:,.{digits}f}'
     original = next(row for row in result['rows'] if row['strategy'] == 'original')
     lines = ['## ทางเลือกความผันผวนและสิ่งที่ต้องแลก', '',
@@ -157,6 +163,7 @@ def render_comparison(result):
 
 
 def save_comparison(result, folder):
+    # บันทึกตารางเปรียบเทียบและน้ำหนักพอร์ตลงไฟล์
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     for filename, rows, fields in [

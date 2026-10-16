@@ -1,3 +1,4 @@
+# อ่านรายชื่อหุ้นจาก Slickcharts เพื่อใช้ดาวน์โหลดราคา
 """อ่านรายชื่อหุ้นจากตาราง Slickcharts เพื่อส่งต่อให้ yfinance."""
 
 from io import StringIO
@@ -11,6 +12,7 @@ SOURCE_URL = "https://www.slickcharts.com/sp500"
 
 
 def parse_symbols(html):
+    # อ่านตาราง HTML และตรวจความถูกต้องของชื่อหุ้น
     tables = pd.read_html(StringIO(html))
     matches = [table for table in tables
                if {"Company", "Symbol", "Weight"}.issubset(table.columns)]
@@ -31,6 +33,7 @@ def parse_symbols(html):
 
 
 def fetch_sp500_tickers():
+    # ดึงรายชื่อหุ้นจากเว็บหรือไฟล์ HTML ที่ผู้ใช้ระบุ
     try:
         response = requests.get(SOURCE_URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
         response.raise_for_status()

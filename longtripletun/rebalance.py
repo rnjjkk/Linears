@@ -1,3 +1,4 @@
+# ทดลองเพิ่มหุ้นในสัดส่วนต่าง ๆ แล้วเปรียบเทียบความเสี่ยงพอร์ต
 """ทดลองเพิ่มหุ้นใหม่ครั้งละหนึ่งตัว โดยใช้ covariance จาก Train เท่านั้น"""
 
 import math
@@ -5,6 +6,7 @@ import numpy as np
 
 
 def try_rebalancing(screening, additions=(0.05, 0.10, 0.15, 0.20)):
+    # ทดลองน้ำหนักหุ้นใหม่และเลือกทางเลือกที่ลดความแปรปรวน
     names = screening['tickers']
     old_weights = np.asarray(screening['weights'], dtype=float)
     covariance = np.asarray(screening['covariance'], dtype=float)
@@ -20,6 +22,7 @@ def try_rebalancing(screening, additions=(0.05, 0.10, 0.15, 0.20)):
         raise ValueError("รายชื่อผู้สมัครซ้ำ")
 
     def risk(w):
+        # คำนวณความแปรปรวนของพอร์ตด้วยสูตร wᵀΣw
         value = float(w @ covariance @ w)
         if value < -1e-12:
             raise ValueError("ความแปรปรวนติดลบผิดปกติ")

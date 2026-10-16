@@ -1,3 +1,4 @@
+# ภาพรวม: ดาวน์โหลดราคาหุ้นย้อนหลังและบันทึกเป็น CSV สำหรับโหมด 1
 import sys
 from pathlib import Path
 if __package__ in (None, ""):

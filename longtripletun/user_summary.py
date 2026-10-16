@@ -1,9 +1,10 @@
-"""สรุปสำหรับผู้ใช้ทั่วไป เก็บข้อมูลทางเทคนิคไว้ใน details."""
+# สร้างสรุปภาษาไทยและแยกรายละเอียดคำนวณออกจากหน้ารายงาน
 from pathlib import Path
 from datetime import datetime
 
 
 def portfolio_header(context):
+    # จัดข้อความชื่อพอร์ต วันที่ และสัดส่วนหุ้นสำหรับหัวรายงาน
     timestamp = context.get('generated_at')
     when = datetime.fromisoformat(timestamp).strftime('%d/%m/%Y %H:%M:%S') if timestamp else 'ไม่ทราบเวลา (รายงานเก่า)'
     source = context.get('portfolio_source', 'ไม่ทราบชื่อไฟล์ (รายงานเก่า)')
@@ -21,6 +22,7 @@ def portfolio_header(context):
 
 
 def write_user_summary(folder, decision, concentration, levels, context):
+    # สร้างหน้าสรุปผลภาษาไทยพร้อมลิงก์รายละเอียดและกราฟ
     folder = Path(folder)
     details = folder / 'details'
     details.mkdir(exist_ok=True)

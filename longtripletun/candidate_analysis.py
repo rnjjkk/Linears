@@ -1,3 +1,4 @@
+# ใช้ Covariance และ PCA คัดหุ้นที่มีรูปแบบต่างจากพอร์ต
 """ขั้นที่ 27–29: คัดหุ้นผู้สมัครด้วยข้อมูล Train เท่านั้น
 
 PCA รอบนี้ fit หุ้นเดิมและผู้สมัครร่วมกัน เพื่อให้เวกเตอร์ทุกตัวอยู่บนแกนเดียวกัน
@@ -13,6 +14,7 @@ import numpy as np
 
 def screen_candidates(csv_path, train_days, portfolio_tickers, portfolio_weights,
                       pca_target=0.8, shortlist_size=10):
+    # สร้าง PCA จากช่วงฝึกแล้วคัดหุ้นที่มีรูปแบบต่างจากพอร์ต
     if not 0 < pca_target <= 1 or shortlist_size < 1:
         raise ValueError("PCA target ต้องอยู่ใน (0,1] และ shortlist ต้องไม่น้อยกว่า 1")
     if len(train_days) < 150 or train_days != sorted(set(train_days)):
