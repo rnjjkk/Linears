@@ -1,17 +1,20 @@
 # LongTripleTun
 
-วิเคราะห์พอร์ตด้วย Vector, Covariance Matrix และ PCA แล้วตรวจความคุ้มค่าก่อนเสนอปรับพอร์ต ผลย้อนหลังไม่รับประกันอนาคต
+วิเคราะห์พอร์ตหุ้นด้วยเวกเตอร์ เมทริกซ์ และ PCA เพื่อค้นหาทางเลือกกระจายความเสี่ยง
 
-## เริ่มใช้งาน
+## 1. ติดตั้ง
 
-รันจากโฟลเดอร์ที่มี main.py:
+เปิด Terminal ในโฟลเดอร์ที่มี `main.py` แล้วรัน:
 
-```powershell
-python -m pip install -r requirements.txt
-python main.py
+```bat
+py -m pip install -r requirements.txt
 ```
 
-กด Enter เพื่อใช้ `examples/portfolio.csv` หรือกรอก `examples/portfolios/02_multi_sector.csv` รับชื่อไฟล์สั้นหรือพาธเต็มได้เช่นกัน
+## 2. เตรียมข้อมูล
+
+วาง CSV ราคาที่ต้องการใช้ใน `data/raw/sp500_daily_5years.csv` คอลัมน์ขั้นต่ำ `Date,Ticker,Close` วันที่ใช้ `YYYY-MM-DD` ผู้ใช้เปลี่ยนไฟล์ราคาเองได้
+
+เลือกพอร์ตตัวอย่าง **01–10** ใน `examples/portfolios/` หรือสร้าง CSV ของตัวเอง:
 
 ```csv
 ticker,weight_percent
@@ -20,86 +23,32 @@ MSFT,30
 GOOGL,10
 ```
 
-น้ำหนักต้องเป็นบวกและรวม 100% เวอร์ชันนี้ไม่รับ `ticker,shares` หรือ `ticker,weight` แบบเดิม
+น้ำหนักต้องเป็นบวกและรวม 100% ตั้งค่าการแบ่งข้อมูล, PCA, shortlist, น้ำหนักทดลอง, fee และเกณฑ์ผ่านได้ใน [config/recommendation_policy.json](config/recommendation_policy.json) ดูหน่วยใน [คู่มือ config](config/README_TH.md)
 
-- โหมด 1 อ่าน CSV ราคา คอลัมน์ขั้นต่ำ `Date,Ticker,Close` วางที่ `data/raw/sp500_daily_5years.csv` หรือกรอกพาธเอง
-- โหมด 2 ใช้ข้อมูลสมมติใน `examples/learning/` เพื่อเรียนสูตร พอร์ตต้องมีหุ้นตรงกับตัวอย่าง โหมดนี้ยังไม่ค้นหุ้นใหม่หรือสร้างรายงานตลาดจริง
-- **ไฟล์ราคาต้นฉบับยังไม่อยู่ในโปรเจกต์** เปิดผลรันเดิมได้ แต่ต้องนำ CSV เดิมกลับมาก่อนทำซ้ำผลชุดเดียวกัน
+## 3. รัน
 
-## โครงสร้าง
-
-```text
-Linear/
-  main.py                       รับ input และอธิบายขั้นคำนวณ
-  README.md
-  requirements.txt              ไลบรารีวิเคราะห์
-  requirements-download.txt     ไลบรารีเพิ่มสำหรับดาวน์โหลด
-  longtripletun/                 โมดูลคำนวณและสร้างรายงาน
-  config/                       เกณฑ์ Fit/Validation
-  examples/
-    portfolio.csv               พอร์ตเริ่มต้น
-    learning/                   ผลตอบแทนสมมติ
-    portfolios/                 พอร์ตตัวอย่าง 10 ชุดและคำอธิบาย
-  scripts/                      ดาวน์โหลด / เปรียบเทียบหลายพอร์ต
-  tests/                        ชุดทดสอบ
-  docs/                         คู่มือสูตรและโครงสร้าง
-  data/raw/                     วาง CSV ราคาที่ต้องการวิเคราะห์
-  reports/
-    report.md                   สรุปผู้ใช้
-    equity.png / drawdown.png / comparison.png
-    details/                    รายละเอียดคำนวณ CSV/JSON/Markdown
-    comparisons/         ผลสำรวจหลายพอร์ต
-    _working/                   ไฟล์ชั่วคราวขณะรันโหมด 1
+```bat
+py main.py
 ```
 
-## ค่าตั้งร่วม
+กรอกพอร์ต เช่น `examples/portfolios/01_popular_large_cap.csv` → เลือก **1** → กด Enter เพื่อใช้ไฟล์ราคาเริ่มต้น
 
-ค่าการแบ่ง Train/Test, Fit/Validation, PCA, shortlist, น้ำหนักทดลอง, ค่าธรรมเนียม และเกณฑ์ผ่านทั้งหมดอยู่ใน `config/recommendation_policy.json` อ่านรายละเอียดและหน่วยใน [คู่มือ config](config/README_TH.md) ค่าใน workflow ด้านล่างเป็นค่าเริ่มต้น โปรแกรมอ่านค่าจริงจาก JSON ตอนเริ่มรันและบันทึกลงผลรายงาน
+เปรียบเทียบตัวอย่างครบ 10 พอร์ตด้วย config เดียวกัน:
 
-## Workflow ปัจจุบัน
-
-1. CSV พอร์ต → ตรวจน้ำหนัก → CSV ราคา → return `Close_t / Close_previous - 1` ไม่เติมราคา missing
-2. แบ่ง Train/Test 80/20 ตามปฏิทินก่อนคัด missing ต้องเหลือ Train ≥150 วันและ Test ≥50 วัน
-3. Train: `X = R - mean(R)`, `Σ = X.T @ X / (n-1)`, variance `w.T @ Σ @ w`; PCA เก็บ variance ≥95%, cosine ของ loadings ช่วย shortlist หุ้นนอกพอร์ต 10 ตัว
-4. ทดลองหุ้นใหม่ทีละตัว 5/10/15/20% ลดหุ้นเดิมตามสัดส่วน เลือกลด variance ด้วย covariance เต็ม
-5. **คำแนะนำสุดท้ายใช้ด่านแยก:** Train แบ่ง Fit 75% / Validation 25%; เลือกหุ้นและน้ำหนักบน Fit แล้วตรวจ Validation หลังค่าธรรมเนียม SD ลด ≥5%, ผลตอบแทนสุทธิลดไม่เกิน 2 จุดเปอร์เซ็นต์ และ Drawdown ไม่แย่ลง ไม่ผ่านให้คงพอร์ตเดิม
-6. ล็อกทางเลือกก่อน Test: buy and hold น้ำหนักลอยตามราคา คิดค่าธรรมเนียมเริ่มต้น 0.10% ต่อมูลค่าซื้อ/ขาย ไม่รวมภาษี slippage หรือ FX ผล Train เต็มมีไว้เปรียบเทียบแยกจากคำแนะนำสุดท้าย
-
-แก้เกณฑ์ใน `config/recommendation_policy.json` ผลชุดนี้เป็นการสำรวจย้อนหลัง เพราะพัฒนาวิธีหลังเห็น Test เดิมแล้ว
-
-## อ่านผลลัพธ์และคู่มือ
-
-- [สรุปผู้ใช้](reports/report.md)
-- [คำแนะนำสุดท้ายและเหตุผล](reports/details/recommendation.md)
-- [ผลสำรวจหลายพอร์ตเดิม](reports/comparisons/comparison.md)
-- [คู่มือสูตรคำนวณ](docs/LongTripleTun_workflow_guide.md)
-- [หน้าที่โมดูลและสถานะล่าสุด](docs/PROJECT_STRUCTURE_TH.md)
-
-รายงานเดิมบันทึกพาธต้นทาง `C:\kmitl\...` ตามจริง ไม่ใช่พาธที่ต้องมีบนเครื่องนี้ รอบใหม่จะแทนที่ reports หลังทำงานสำเร็จ
-
-## รายงานล่าสุดชุดเดียว
-
-ทุกครั้งที่รันโหมดราคาจริงสำเร็จ โปรแกรมเขียนทับ `reports/report.md` กราฟ และไฟล์ใน `reports/details/` ด้วยผลของพอร์ตที่เพิ่งเลือก ล้างไฟล์ผลเก่าที่รอบใหม่ไม่ได้ใช้ ไม่สร้างโฟลเดอร์รายงานตามวันเวลาหรือสะสมรายงานแต่ละพอร์ต
-
-ระหว่างคำนวณใช้ `.building_current` และ `_working` เป็นพื้นที่ชั่วคราวชื่อเดิม ถ้ารอบใหม่ไม่สำเร็จ รายงานล่าสุดที่ทำเสร็จแล้วยังอยู่ ให้รันโปรแกรมทีละรอบ
-
-เครื่องมือเปรียบเทียบหลายพอร์ตใช้ `reports/comparisons` ชุดเดียวแยกจากรายงานหลัก และเขียนทับเมื่อเรียกเครื่องมือนี้ซ้ำ โหมดบทเรียนข้อมูลสมมติแสดงสูตรใน Terminal และไม่เปลี่ยนรายงานตลาดจริง
-
-## ทดสอบและเปรียบเทียบ
-
-```powershell
-python -m unittest discover -s tests -v
-python scripts/compare_example_portfolios.py --help
-python scripts/compare_example_portfolios.py --prices "C:\path\sp500_daily_5years.csv"
+```bat
+py scripts/compare_example_portfolios.py
 ```
 
-การเปรียบเทียบหลายพอร์ตใช้สูตรเดิม บันทึก reports/comparisons แยกจากรายงานหลัก
+## 4. อ่านผล
 
-ดาวน์โหลด snapshot ใหม่เมื่อจำเป็น:
+- [รายงานพอร์ตที่เลือก](reports/report.md) — อ่านหัวข้อ **ทางเลือกที่ผ่านเกณฑ์**
+- [ผลเปรียบเทียบ 10 พอร์ต](reports/comparisons/comparison.md)
+- [เหตุผลผ่าน/ไม่ผ่าน](reports/details/recommendation.md) และไฟล์น้ำหนักใน `reports/details/recommended_weights.csv`
 
-```powershell
-python -m pip install -r requirements-download.txt
-python scripts/pulldata.py
-```
+รันใหม่สำเร็จจะเขียนทับรายงานชุดเดิม แต่ละทางเลือกเป็นคนละพอร์ต ไม่ใช่ซื้อทุกตัวพร้อมกัน
 
-บันทึก data/raw/sp500_daily_5years.csv ใช้รายชื่อ Slickcharts และราคา yfinance หากเว็บปฏิเสธ Python โค้ดเดิมให้กรอก HTML ที่บันทึกจากเบราว์เซอร์ การดาวน์โหลดใหม่อาจได้ผลต่างจากรายงานเดิม
+## 5. ข้อจำกัด
+
+ผลย้อนหลังไม่รับประกันกำไร หากไม่มีทางเลือกผ่านเกณฑ์จะคงพอร์ตเดิม ค่าธรรมเนียมเป็นแบบจำลอง ไม่รวมภาษีหรืออัตราแลกเปลี่ยน ใช้ข้อมูลราคาและ config ชุดเดียวกันเมื่อเปรียบเทียบพอร์ต
+
+[สูตรและขั้นตอนละเอียด](docs/LongTripleTun_workflow_guide.md) · [โครงสร้างโปรเจกต์](docs/PROJECT_STRUCTURE_TH.md)

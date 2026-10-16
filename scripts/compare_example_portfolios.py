@@ -32,8 +32,11 @@ def main():
     parser.add_argument('--prices', type=Path, default=default_price_path())
     args = parser.parse_args()
     from longtripletun.report_store import begin_report, publish_report
+    # ใช้เฉพาะตัวอย่างมาตรฐาน 01–10 จากโฟลเดอร์ portfolios
+    files = sorted((EXAMPLES_DIR / 'portfolios').glob('[0-9][0-9]_*.csv'))
+    if not files:
+        raise ValueError('ไม่พบ CSV พอร์ตตัวอย่างใน examples/portfolios')
     output = begin_report(REPORTS_DIR / 'comparisons')
-    files = [EXAMPLES_DIR / 'portfolio.csv', *sorted((EXAMPLES_DIR / 'portfolios').glob('*.csv'))]
     summary, contexts = [], []
     for path in files:
         print('Analyzing:', path.name, flush=True)
