@@ -2,6 +2,10 @@
 
 | ตำแหน่ง | หน้าที่ |
 |---|---|
+| `OpenWeb.cmd`, `web.py` | เปิดเว็บและ Python ในเครื่องอัตโนมัติ |
+| `web/index.html` | หน้าจอเดียว รวม HTML, CSS และ JavaScript |
+| `longtripletun/web_app.py` | API ในเครื่อง ตรวจ input และติดตามงาน |
+| `longtripletun/web_worker.py` | เรียกการคำนวณเดิมและจัดผลสำหรับหน้าเว็บ |
 | `main.py` | รับ CSV และแสดงขั้นคำนวณจนสร้างรายงาน |
 | `longtripletun/settings.py` | อ่าน ตรวจ และส่งค่าตั้งร่วมให้ทุกขั้น |
 | `longtripletun/price_data.py` | อ่านราคา ตรวจข้อมูล และคำนวณผลตอบแทน |

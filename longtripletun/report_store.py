@@ -8,6 +8,7 @@ import shutil
 import json
 
 GENERATED_FILES = {
+    'web_result.json', 'calculations.txt',
     '.report_files.json',
     'report.md', 'recommendation.md', 'recommendation.json', 'recommended_weights.csv',
     'risk_levels.md', 'risk_levels.csv', 'risk_level_weights.csv', 'metrics.csv', 'daily.csv',
