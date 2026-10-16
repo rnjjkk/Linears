@@ -89,7 +89,7 @@ const fieldSpecs=[
  {key:'shortlist_size',label:'จำนวนหุ้นที่จะนำมาทดลอง',unit:'ตัว',scale:1,min:1,max:100,step:1,help:'Shortlist คือหุ้นที่รูปแบบต่างจากพอร์ตและผ่านการคัดข้อมูล ยังไม่ใช่คำแนะนำซื้อ'},
  {key:'fee_rate',label:'ค่าธรรมเนียมซื้อและขาย',unit:'%',scale:100,min:0,max:1,step:.01,help:'อัตราต่อมูลค่าซื้อและขาย หักครั้งแรกก่อนถือพอร์ต เช่น 0.10% ไม่คิดซ้ำรายวัน'},
  {key:'minimum_sd_reduction_percent',label:'ต้องลดการแกว่งอย่างน้อย',unit:'%',scale:1,min:0,max:100,step:.1,help:'Validation ต้องลดส่วนเบี่ยงเบนมาตรฐาน (SD) เทียบพอร์ตเดิมถึงค่านี้ จึงผ่านด้านความผันผวน'},
- {key:'maximum_return_loss_pp',label:'ยอมให้ผลตอบแทนลดลงได้',unit:'%',scale:1,min:0,max:100,step:.1,help:'เช่น 2 จุดเปอร์เซ็นต์ ยอมให้ผลตอบแทนสุทธิ 20% เหลือ 18% บน Validation'},
+ {key:'maximum_return_loss_pp',label:'ยอมให้ผลตอบแทนลดลงได้',unit:'%',scale:1,min:0,max:100,step:.1,help:'เช่น 2 เปอร์เซ็นต์ ยอมให้ผลตอบแทนสุทธิ 20% เหลือ 18% บน Validation'},
  {key:'maximum_drawdown_worsening_pp',label:'ยอมให้การลดจากยอดแย่ลงได้',unit:'%',scale:1,min:0,max:100,step:.1,help:'Drawdown วัดการลดจากยอดสูงสุด ค่า 0 หมายถึงต้องไม่แย่ลงบน Validation'},
  {key:'minimum_train_days',label:'วันเรียนรู้ขั้นต่ำ (Train)',unit:'วัน',scale:1,min:150,max:3000,step:1,help:'จำนวนวันข้อมูลครบหลังกรอง ต้องไม่น้อยกว่า 150 วัน'},
  {key:'minimum_test_days',label:'วันทดสอบขั้นต่ำ (Test)',unit:'วัน',scale:1,min:2,max:1500,step:1,help:'ใช้ประเมินภายหลังจากล็อกทางเลือกแล้ว ไม่ย้อนใช้เลือกหุ้น'},
