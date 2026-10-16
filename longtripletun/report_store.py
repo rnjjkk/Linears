@@ -82,7 +82,6 @@ def remove_generated(folder, root):
 
 def begin_report(root):
     # เตรียมพื้นที่ชั่วคราวโดยเก็บรายงานที่เสร็จแล้วไว้
-    """Build in a reusable temporary folder without changing the completed report."""
     root = Path(root)
     if root.is_symlink() or root.is_junction():
         raise ValueError('รากรายงานต้องไม่เป็นลิงก์')
@@ -123,7 +122,7 @@ def _existing_files(root):
         if not isinstance(paths, list) or not all(isinstance(p, str) for p in paths):
             raise ValueError('manifest รายงานไม่ถูกต้อง')
         return {str(_checked_path(root, p).relative_to(root).as_posix()) for p in paths}
-    # Adopt flat reports written before a manifest existed; leave unrelated folders intact.
+    # รองรับรายงานเดิมที่ยังไม่มีรายการไฟล์ โดยไม่แตะโฟลเดอร์อื่น
     files = {p.name for p in root.iterdir() if p.is_file() and p.name in GENERATED_FILES and not p.name.startswith('.')}
     for folder in root.iterdir():
         if folder.is_dir() and (folder.name == 'details' or re.fullmatch(r'portfolio|[0-9]{2}_[A-Za-z0-9_]+', folder.name)):
@@ -136,7 +135,6 @@ def _existing_files(root):
 
 def publish_report(folder):
     # เขียนทับผลรายงานและคืนไฟล์เดิมหากบันทึกไม่สำเร็จ
-    """Replace files directly in the report root; restore old files if writing fails."""
     folder = Path(folder)
     root = folder.parent.resolve()
     if folder.name != '.building_current':
@@ -189,7 +187,7 @@ def publish_report(folder):
         remove_generated(backup, root)
         raise OSError('อัปเดตรายงานไม่สำเร็จ คืนไฟล์รายงานเดิมแล้ว') from error
     warnings = []
-    # Remove empty output directories only; preserve comparison reports and user files.
+    # ลบเฉพาะโฟลเดอร์ผลลัพธ์ที่ว่าง โดยเก็บรายงานเปรียบเทียบและไฟล์ผู้ใช้ไว้
     parents = {parent for name in before - expected for parent in (root / name).parents if parent != root and parent.is_relative_to(root)}
     for parent in sorted(parents, key=lambda p: len(p.parts), reverse=True):
         if parent.is_dir() and not any(parent.iterdir()):

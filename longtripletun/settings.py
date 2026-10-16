@@ -1,5 +1,4 @@
 # อ่านและตรวจค่าตั้งการวิเคราะห์ร่วมกันจาก config เดียว
-"""Shared validated settings for the application and analysis utilities."""
 import json
 import math
 from pathlib import Path
